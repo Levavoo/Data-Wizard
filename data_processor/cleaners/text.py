@@ -15,7 +15,6 @@ from typing import Any
 
 from data_processor.core.table import Table
 
-
 VALID_CASE_OPTIONS = {
     None,
     "lower",
