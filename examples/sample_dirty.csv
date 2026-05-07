@@ -1,0 +1,5 @@
+ Customer ID , Name , Country , Active 
+1,Alice,Germany,YES
+2,Bob, France ,no
+3,Charlie,,TRUE
+4,,Germany,false
