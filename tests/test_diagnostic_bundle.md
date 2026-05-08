@@ -137,3 +137,15 @@ This becomes the central report object for:
 - future UI dashboards
 - migration diagnostics
 - quarantine workflows
+
+## `test_build_diagnostic_bundle_includes_table_metadata`
+
+Verifies table metadata is included in the diagnostic bundle.
+
+Useful for CSV diagnostics such as:
+
+```text
+source_format
+encoding
+delimiter
+```

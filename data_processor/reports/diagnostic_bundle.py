@@ -1,8 +1,8 @@
 """
 Diagnostic bundle utilities.
 
-This module combines quality reports, profiles, and validation reports into
-one structured diagnostic report.
+This module combines quality reports, profiles, table metadata, and validation
+reports into one structured diagnostic report.
 
 Purpose:
 - create one complete report object
@@ -45,6 +45,7 @@ def build_diagnostic_bundle(
         "table_name": table.name,
         "row_count": table.row_count(),
         "column_count": table.column_count(),
+        "metadata": table.metadata,
         "quality_report": generate_quality_report(table),
         "column_profiles": profile_all_columns(table),
         "row_profiles": profile_all_rows(table),

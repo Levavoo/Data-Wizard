@@ -1,0 +1,6 @@
+customer_id,name,amount,status
+1,Alice,100,ok
+2,Bob,unknown,ok
+3,Charlie,250.50,review
+4,Diana,n/a,ok
+5,Erik,500,failed

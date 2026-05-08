@@ -1,0 +1,4 @@
+customer_id,name,city,notes,amount
+1,Alice,"Berlin, Germany","Prefers morning appointments","1,000.50"
+2,Bob,"Paris, France","VIP customer, priority support","250.75"
+3,Charlie,"Rome, Italy","Needs follow-up, send reminder",""

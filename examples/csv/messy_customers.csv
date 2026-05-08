@@ -1,0 +1,5 @@
+ Customer ID , Name , Country , Active , Amount , Signup Date
+ 1 , Alice , Germany , YES , "1,000" , 2026-01-01
+ 2 , Bob , France , no , 250.50 , 02.01.2026
+ 3 , Charlie , , TRUE , , 2026/01/03
+ 4 , , Italy , false , "5,500.75" ,

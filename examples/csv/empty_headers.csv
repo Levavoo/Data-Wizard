@@ -1,0 +1,4 @@
+customer_id,,country,,active
+1,Alice,Germany,Note A,true
+2,Bob,France,Note B,false
+3,Charlie,Italy,,true

@@ -1,0 +1,6 @@
+customer_id,name,country,active,amount,email
+1,Alice,Germany,true,100,alice@example.com
+2,Bob,France,false,250.50,
+2,Bob,France,false,250.50,
+3,Charlie,,true,,charlie@example.com
+4,,Italy,false,500,

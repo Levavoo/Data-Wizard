@@ -1,0 +1,5 @@
+customer_id,name,country,active
+1,Alice,Germany,true
+2,Bob,France
+3,Charlie,Italy,true,unexpected_extra_value
+4,Diana,,false

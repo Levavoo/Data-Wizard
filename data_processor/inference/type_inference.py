@@ -50,6 +50,13 @@ DATETIME_FORMATS = (
 )
 
 
+def clean_numeric_string(value: str) -> str:
+    """
+    Prepare a numeric string for type inference.
+    """
+    return value.strip().replace(",", "").replace("_", "")
+
+
 def infer_table_types(table: Table) -> None:
     """
     Infer and assign types for all table columns.
@@ -161,7 +168,7 @@ def is_integer(value: Any) -> bool:
         return False
 
     try:
-        int(value.strip())
+        int(clean_numeric_string(value))
         return True
 
     except ValueError:
@@ -192,7 +199,7 @@ def is_float(value: Any) -> bool:
         return False
 
     try:
-        float(value.strip())
+        float(clean_numeric_string(value))
         return True
 
     except ValueError:

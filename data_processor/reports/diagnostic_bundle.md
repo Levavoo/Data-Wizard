@@ -76,6 +76,31 @@ Total number of rows.
 Total number of schema columns.
 
 ---
+## `metadata`
+
+Metadata stored on the table.
+
+For CSV input, this may include:
+
+```text
+source_format
+encoding
+delimiter
+```
+
+Example:
+
+```python
+{
+    "source_format": "csv",
+    "encoding": "utf-8",
+    "delimiter": ";"
+}
+```
+
+This helps explain how the source file was parsed.
+
+---
 
 ## `quality_report`
 

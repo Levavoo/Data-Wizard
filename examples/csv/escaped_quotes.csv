@@ -1,0 +1,4 @@
+customer_id,name,notes,active
+1,Alice,"She said ""hello""",true
+2,Bob,"Customer wrote ""urgent"" in the message",false
+3,Charlie,"Quote inside text: ""check again""",true

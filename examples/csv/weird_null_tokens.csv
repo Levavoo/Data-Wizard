@@ -1,0 +1,6 @@
+customer_id,name,email,phone
+1,Alice,alice@example.com,-
+2,Bob,NULL,#N/A
+3,Charlie,NIL,n/a
+4,Diana,none,NA
+5,Erik,,nan

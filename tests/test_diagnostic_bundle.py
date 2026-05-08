@@ -147,3 +147,20 @@ def test_build_diagnostic_bundle_empty_validation_report() -> None:
     assert validation_report["total_results"] == 0
     assert validation_report["failed_count"] == 0
     assert validation_report["has_failures"] is False
+
+
+def test_build_diagnostic_bundle_includes_table_metadata() -> None:
+    """
+    Verify table metadata is included in the diagnostic bundle.
+    """
+    table = create_test_table()
+
+    table.add_metadata("source_format", "csv")
+    table.add_metadata("encoding", "utf-8")
+    table.add_metadata("delimiter", ";")
+
+    bundle = build_diagnostic_bundle(table)
+
+    assert bundle["metadata"]["source_format"] == "csv"
+    assert bundle["metadata"]["encoding"] == "utf-8"
+    assert bundle["metadata"]["delimiter"] == ";"

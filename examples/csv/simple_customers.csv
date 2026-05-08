@@ -1,0 +1,4 @@
+customer_id,name,country,active,amount,signup_date
+1,Alice,Germany,true,100,2026-01-01
+2,Bob,France,false,250.5,2026-01-02
+3,Charlie,Italy,true,300,2026-01-03

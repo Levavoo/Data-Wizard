@@ -1,0 +1,6 @@
+customer_id,name,country,unused_column,active
+1,Alice,Germany,,true
+2,Bob,France,,false
+3,Charlie,Italy,,true
+,,,,
+4,Diana,Germany,,false
