@@ -1,15 +1,18 @@
 """
 Type inference utilities.
 
-This module infers logical column types from raw table values.
+This module infers logical column types from table values.
 
 Important:
 - inference only detects likely types
 - values are NOT converted here
 - adapters should still return raw strings
+- cleaned/cast Python values are also recognized
 """
 
+from datetime import date
 from datetime import datetime
+from typing import Any
 
 from data_processor.core.table import Table
 
@@ -63,13 +66,13 @@ def infer_table_types(table: Table) -> None:
         column.set_type(inferred_type)
 
 
-def infer_column_type(values: list[object]) -> str:
+def infer_column_type(values: list[Any]) -> str:
     """
     Infer the most likely logical type for one column.
 
     Args:
         values:
-            Raw column values.
+            Raw or cleaned column values.
 
     Returns:
         Logical type name.
@@ -97,13 +100,13 @@ def infer_column_type(values: list[object]) -> str:
     return "string"
 
 
-def is_null(value: object) -> bool:
+def is_null(value: Any) -> bool:
     """
     Check whether a value represents null/missing data.
 
     Args:
         value:
-            Raw value.
+            Raw or cleaned value.
 
     Returns:
         True if value should be considered null.
@@ -117,34 +120,43 @@ def is_null(value: object) -> bool:
     return value.strip().lower() in NULL_VALUES
 
 
-def is_boolean(value: object) -> bool:
+def is_boolean(value: Any) -> bool:
     """
     Check whether a value represents a boolean.
 
     Args:
         value:
-            Raw value.
+            Raw or cleaned value.
 
     Returns:
         True if value matches known boolean values.
     """
+    if isinstance(value, bool):
+        return True
+
     if not isinstance(value, str):
         return False
 
     return value.strip().lower() in BOOLEAN_VALUES
 
 
-def is_integer(value: object) -> bool:
+def is_integer(value: Any) -> bool:
     """
     Check whether a value represents an integer.
 
     Args:
         value:
-            Raw value.
+            Raw or cleaned value.
 
     Returns:
         True if integer parsing succeeds.
     """
+    if isinstance(value, bool):
+        return False
+
+    if isinstance(value, int):
+        return True
+
     if not isinstance(value, str):
         return False
 
@@ -156,17 +168,26 @@ def is_integer(value: object) -> bool:
         return False
 
 
-def is_float(value: object) -> bool:
+def is_float(value: Any) -> bool:
     """
     Check whether a value represents a float.
 
     Args:
         value:
-            Raw value.
+            Raw or cleaned value.
 
     Returns:
         True if float parsing succeeds.
     """
+    if isinstance(value, bool):
+        return False
+
+    if isinstance(value, float):
+        return True
+
+    if isinstance(value, int):
+        return True
+
     if not isinstance(value, str):
         return False
 
@@ -178,17 +199,23 @@ def is_float(value: object) -> bool:
         return False
 
 
-def is_date(value: object) -> bool:
+def is_date(value: Any) -> bool:
     """
     Check whether a value matches supported date formats.
 
     Args:
         value:
-            Raw value.
+            Raw or cleaned value.
 
     Returns:
         True if parsing succeeds.
     """
+    if isinstance(value, datetime):
+        return False
+
+    if isinstance(value, date):
+        return True
+
     if not isinstance(value, str):
         return False
 
@@ -205,17 +232,20 @@ def is_date(value: object) -> bool:
     return False
 
 
-def is_datetime(value: object) -> bool:
+def is_datetime(value: Any) -> bool:
     """
     Check whether a value matches supported datetime formats.
 
     Args:
         value:
-            Raw value.
+            Raw or cleaned value.
 
     Returns:
         True if parsing succeeds.
     """
+    if isinstance(value, datetime):
+        return True
+
     if not isinstance(value, str):
         return False
 

@@ -195,3 +195,72 @@ Type inference should stay:
 - independent from file formats
 
 Avoid hidden behavior from libraries such as pandas.
+
+---
+
+# Existing Python Value Support
+
+Type inference supports both raw string values and already-cleaned Python values.
+
+This is important because the pipeline runs inference twice:
+
+```text
+before casting
+after casting
+```
+
+Before casting:
+
+```text
+"1"
+→ integer
+"yes"
+→ boolean
+```
+
+After casting:
+
+```python
+1
+→ integer
+
+True
+→ boolean
+```
+
+Supported cleaned Python values:
+
+| Python Value | Inferred Type |
+|---|---|
+| `bool` | `boolean` |
+| `int` | `integer` |
+| `float` | `float` |
+| `date` | `date` |
+| `datetime` | `datetime` |
+| `None` | ignored as null |
+
+Important:
+
+```python
+bool
+```
+
+is checked before:
+
+```python
+int
+```
+
+because in Python:
+
+```python
+isinstance(True, int)
+```
+
+returns:
+
+```python
+True
+```
+
+So booleans must be handled explicitly to avoid treating `True` and `False` as `1` and `0`.

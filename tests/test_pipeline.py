@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from data_processor.core.pipeline import run_csv_pipeline
@@ -25,6 +26,7 @@ def test_run_csv_pipeline_creates_output_file(tmp_path: Path) -> None:
     assert output_path.exists()
     assert "table" in result
     assert "quality_report" in result
+    assert "diagnostic_bundle" in result
 
 
 def test_run_csv_pipeline_quality_report(tmp_path: Path) -> None:
@@ -76,3 +78,64 @@ def test_run_csv_pipeline_exports_cleaned_values(tmp_path: Path) -> None:
 
     assert "Alice,true,1000" in content
     assert "Bob,false,25.5" in content
+
+
+def test_run_csv_pipeline_returns_diagnostic_bundle(tmp_path: Path) -> None:
+    """
+    Verify the pipeline returns a diagnostic bundle.
+    """
+    input_path = tmp_path / "input.csv"
+    output_path = tmp_path / "output.csv"
+
+    input_path.write_text(
+        "Name,Country\n" "Alice,Germany\n" "Bob,\n",
+        encoding="utf-8",
+    )
+
+    result = run_csv_pipeline(
+        input_path=input_path,
+        output_path=output_path,
+    )
+
+    diagnostic_bundle = result["diagnostic_bundle"]
+
+    assert diagnostic_bundle["table_name"] == "input"
+    assert diagnostic_bundle["row_count"] == 2
+    assert diagnostic_bundle["column_count"] == 2
+
+    assert "quality_report" in diagnostic_bundle
+    assert "column_profiles" in diagnostic_bundle
+    assert "row_profiles" in diagnostic_bundle
+    assert "validation_report" in diagnostic_bundle
+
+
+def test_run_csv_pipeline_exports_diagnostic_report(tmp_path: Path) -> None:
+    """
+    Verify the pipeline exports a diagnostic JSON report when report_path is provided.
+    """
+    input_path = tmp_path / "input.csv"
+    output_path = tmp_path / "output.csv"
+    report_path = tmp_path / "report.json"
+
+    input_path.write_text(
+        "Name,Country\n" "Alice,Germany\n" "Bob,\n",
+        encoding="utf-8",
+    )
+
+    run_csv_pipeline(
+        input_path=input_path,
+        output_path=output_path,
+        report_path=report_path,
+    )
+
+    assert output_path.exists()
+    assert report_path.exists()
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+
+    assert report["table_name"] == "input"
+    assert report["row_count"] == 2
+    assert "quality_report" in report
+    assert "column_profiles" in report
+    assert "row_profiles" in report
+    assert "validation_report" in report

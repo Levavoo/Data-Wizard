@@ -1,3 +1,6 @@
+from datetime import date
+from datetime import datetime
+
 from data_processor.core.column import Column
 from data_processor.core.schema import Schema
 from data_processor.core.table import Table
@@ -49,6 +52,42 @@ def test_infer_string_column() -> None:
     assert infer_column_type(values) == "string"
 
 
+def test_infer_existing_boolean_values() -> None:
+    values = [True, False, True]
+
+    assert infer_column_type(values) == "boolean"
+
+
+def test_infer_existing_integer_values() -> None:
+    values = [1, 2, 300, None]
+
+    assert infer_column_type(values) == "integer"
+
+
+def test_infer_existing_float_values() -> None:
+    values = [1.5, 2.0, 300.75, None]
+
+    assert infer_column_type(values) == "float"
+
+
+def test_infer_existing_date_values() -> None:
+    values = [
+        date(2026, 1, 1),
+        date(2026, 2, 1),
+    ]
+
+    assert infer_column_type(values) == "date"
+
+
+def test_infer_existing_datetime_values() -> None:
+    values = [
+        datetime(2026, 1, 1, 10, 30, 0),
+        datetime(2026, 1, 2, 11, 45, 0),
+    ]
+
+    assert infer_column_type(values) == "datetime"
+
+
 def test_infer_table_types_updates_schema_columns() -> None:
     schema = Schema(
         columns=[
@@ -77,6 +116,49 @@ def test_infer_table_types_updates_schema_columns() -> None:
 
     infer_table_types(table)
 
-    assert table.schema.get_column("customer_id").inferred_type == "integer"
-    assert table.schema.get_column("active").inferred_type == "boolean"
-    assert table.schema.get_column("country").inferred_type == "string"
+    customer_id_column = table.schema.get_column("customer_id")
+    active_column = table.schema.get_column("active")
+    country_column = table.schema.get_column("country")
+
+    assert customer_id_column is not None
+    assert active_column is not None
+    assert country_column is not None
+
+    assert customer_id_column.inferred_type == "integer"
+    assert active_column.inferred_type == "boolean"
+    assert country_column.inferred_type == "string"
+
+
+def test_infer_table_types_after_casting() -> None:
+    schema = Schema(
+        columns=[
+            Column(name="customer_id"),
+            Column(name="active"),
+        ]
+    )
+
+    table = Table(
+        name="customers",
+        schema=schema,
+        rows=[
+            {
+                "customer_id": 1,
+                "active": True,
+            },
+            {
+                "customer_id": 2,
+                "active": False,
+            },
+        ],
+    )
+
+    infer_table_types(table)
+
+    customer_id_column = table.schema.get_column("customer_id")
+    active_column = table.schema.get_column("active")
+
+    assert customer_id_column is not None
+    assert active_column is not None
+
+    assert customer_id_column.inferred_type == "integer"
+    assert active_column.inferred_type == "boolean"

@@ -13,10 +13,13 @@ CSV Input
 → CsvAdapter
 → Table
 → Cleaners
-→ Inference
+→ Type Inference
+→ Type-Aware Casting
+→ Schema Metadata
 → Quality Report
+→ Diagnostic Bundle
 → CSV Exporter
-→ CSV Output
+→ Optional JSON Report Exporter
 ```
 
 ---
@@ -39,6 +42,7 @@ Verifies:
 - output CSV file is created
 - result contains table
 - result contains quality report
+- result contains diagnostic bundle
 
 ---
 
@@ -74,11 +78,40 @@ Examples:
 
 ---
 
+## `test_run_csv_pipeline_returns_diagnostic_bundle`
+
+Verifies the pipeline returns a diagnostic bundle.
+
+Checks:
+
+- table name
+- row count
+- column count
+- quality report section
+- column profile section
+- row profile section
+- validation report section
+
+---
+
+## `test_run_csv_pipeline_exports_diagnostic_report`
+
+Verifies the pipeline exports a JSON diagnostic report when `report_path` is provided.
+
+Checks:
+
+- cleaned CSV output exists
+- JSON report exists
+- JSON report can be read
+- report contains expected diagnostic sections
+
+---
+
 # Important Design Rule
 
 Pipeline tests verify orchestration.
 
-They should not deeply test individual cleaners.
+They should not deeply test individual cleaners, profilers, validators, or exporters.
 
 Individual modules already have their own dedicated tests.
 
@@ -93,7 +126,7 @@ pytest tests\test_pipeline.py
 Expected result:
 
 ```text
-3 passed
+5 passed
 ```
 
 ---
@@ -103,27 +136,35 @@ Expected result:
 ```powershell
 ruff check `
     data_processor\core\pipeline.py `
+    scripts\run_csv_pipeline.py `
     tests\test_pipeline.py
 
 black `
     data_processor\core\pipeline.py `
+    scripts\run_csv_pipeline.py `
     tests\test_pipeline.py
 
 pytest tests\test_pipeline.py
+pytest
 ```
 
 ---
 
-# Run Full Test Suite
+# Manual CLI Test
 
 ```powershell
-pytest
+python scripts\run_csv_pipeline.py `
+    examples\sample_dirty.csv `
+    data\processed\sample_clean.csv `
+    --report-path data\processed\sample_clean_report.json
 ```
 
-Expected result:
+Then inspect:
 
-```text
-80 passed
+```powershell
+Get-Content data\processed\sample_clean.csv
+
+Get-Content data\processed\sample_clean_report.json
 ```
 
 ---
@@ -136,8 +177,9 @@ Pipeline tests should focus on:
 - file input/output
 - module integration
 - returned result structure
+- report export integration
 
-Avoid duplicating every cleaner test here.
+Avoid duplicating every module-level test here.
 
 ---
 
@@ -145,9 +187,9 @@ Avoid duplicating every cleaner test here.
 
 Possible future additions:
 
-- pipeline error handling tests
+- optional constraints tests
 - invalid input file tests
 - malformed CSV tests
-- report export tests
-- configurable pipeline tests
-- dry-run mode tests
+- strict/tolerant mode tests
+- report metadata tests
+- auto-generated report path tests

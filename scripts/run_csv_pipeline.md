@@ -13,6 +13,7 @@ PowerShell Command
 → run_csv_pipeline.py
 → data_processor.core.pipeline.run_csv_pipeline()
 → cleaned CSV output
+→ optional diagnostic JSON report
 ```
 
 ---
@@ -23,14 +24,17 @@ This script handles:
 
 - reading command-line arguments
 - calling the CSV pipeline
+- printing the input path
 - printing the output path
-- printing the quality report
+- printing the diagnostic report path if provided
+- printing the quality report summary
 
 It does not handle:
 
 - CSV parsing directly
 - cleaning directly
 - validation directly
+- report construction directly
 - exporting directly
 
 Those responsibilities belong to the core project modules.
@@ -43,17 +47,17 @@ Those responsibilities belong to the core project modules.
 
 Reads command-line arguments.
 
-Expected arguments:
+Required arguments:
 
 ```text
 input_path
 output_path
 ```
 
-Example:
+Optional arguments:
 
-```powershell
-python scripts\run_csv_pipeline.py data\raw\input.csv data\processed\output.csv
+```text
+--report-path
 ```
 
 ---
@@ -73,7 +77,7 @@ parse arguments
 
 ---
 
-# Example Usage
+# Example Usage Without Report Export
 
 From the project root:
 
@@ -81,6 +85,17 @@ From the project root:
 python scripts\run_csv_pipeline.py `
     data\raw\customers.csv `
     data\processed\customers_clean.csv
+```
+
+---
+
+# Example Usage With Report Export
+
+```powershell
+python scripts\run_csv_pipeline.py `
+    data\raw\customers.csv `
+    data\processed\customers_clean.csv `
+    --report-path data\processed\customers_report.json
 ```
 
 ---
@@ -94,6 +109,7 @@ CSV pipeline completed.
 
 Input file: data\raw\customers.csv
 Output file: data\processed\customers_clean.csv
+Diagnostic report: data\processed\customers_report.json
 
 Quality report:
 {
@@ -102,6 +118,31 @@ Quality report:
     "column_count": 5,
     ...
 }
+```
+
+---
+
+# Import Path Handling
+
+This script adds the project root to `sys.path`.
+
+Reason:
+
+When Python runs a script from the `scripts/` folder, Python may treat `scripts/` as the import root.
+
+The project package lives here:
+
+```text
+data_processor/
+```
+
+So this block makes imports reliable:
+
+```python
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 ```
 
 ---
@@ -133,7 +174,7 @@ CSV File
 → CLI Runner
 → Pipeline
 → Cleaned CSV
-→ Quality Report
+→ Optional Diagnostic JSON Report
 ```
 
 ---
@@ -157,13 +198,16 @@ Use an existing sample file:
 ```powershell
 python scripts\run_csv_pipeline.py `
     examples\sample_dirty.csv `
-    data\processed\sample_clean.csv
+    data\processed\sample_clean.csv `
+    --report-path data\processed\sample_clean_report.json
 ```
 
 Then check:
 
 ```powershell
 Get-Content data\processed\sample_clean.csv
+
+Get-Content data\processed\sample_clean_report.json
 ```
 
 ---
@@ -186,12 +230,11 @@ No external CLI framework is needed yet.
 
 Possible future additions:
 
-- optional report output path
-- JSON report export
 - verbose mode
 - dry-run mode
 - strict/tolerant mode
 - selectable cleaning profile
+- constraint file input
 - batch folder processing
 - logging
 - exit codes
