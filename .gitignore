@@ -40,13 +40,22 @@ build/
 # Temporary files
 tmp/
 temp/
+scratch/
+
+# Jupyter
+.ipynb_checkpoints/
 
 # Data files
 data/raw/*
 data/processed/*
 
-# Ignore everything in raw except placeholder
+# Keep data folder placeholders
 !data/raw/.gitkeep
-
-# Ignore everything in processed except placeholder
 !data/processed/.gitkeep
+
+# Generated reports / diagnostics
+reports/generated/
+diagnostics/generated/
+
+# Local exports
+exports/
