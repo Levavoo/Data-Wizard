@@ -73,58 +73,14 @@ Trims and normalizes whitespace.
 
 ---
 
-## 4. Clean Booleans
-
-```python
-clean_table_booleans(table)
-```
-
-Converts values such as:
-
-```text
-"yes"
-"no"
-"true"
-"false"
-```
-
-into:
-
-```python
-True
-False
-```
-
----
-
-## 5. Clean Numbers
-
-```python
-clean_table_numbers(table)
-```
-
-Converts numeric strings into:
-
-```python
-int
-float
-```
-
----
-
-## 6. Clean Dates
-
-```python
-clean_table_dates(table)
-```
-
-Converts date-like strings into:
-
-```python
-date
-datetime
-```
-
+→ Null Cleaning
+→ Text Cleaning
+→ Type Inference
+→ Type-Aware Casting
+→ Type Inference Refresh
+→ Schema Metadata Inference
+→ Quality Report
+→ Export
 ---
 
 ## 7. Infer Types

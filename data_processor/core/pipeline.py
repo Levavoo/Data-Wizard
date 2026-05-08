@@ -13,11 +13,9 @@ from pathlib import Path
 from typing import Any
 
 from data_processor.adapters.csv_adapter import CsvAdapter
-from data_processor.cleaners.booleans import clean_table_booleans
-from data_processor.cleaners.dates import clean_table_dates
 from data_processor.cleaners.nulls import clean_table_nulls
-from data_processor.cleaners.numbers import clean_table_numbers
 from data_processor.cleaners.text import clean_table_text
+from data_processor.cleaners.type_caster import cast_table_by_schema
 from data_processor.exporters.csv_exporter import export_table_to_csv
 from data_processor.inference.schema_inference import infer_schema_metadata
 from data_processor.inference.type_inference import infer_table_types
@@ -46,9 +44,9 @@ def run_csv_pipeline(
 
     clean_table_nulls(table)
     clean_table_text(table)
-    clean_table_booleans(table)
-    clean_table_numbers(table)
-    clean_table_dates(table)
+
+    infer_table_types(table)
+    cast_table_by_schema(table)
 
     infer_table_types(table)
     infer_schema_metadata(table)

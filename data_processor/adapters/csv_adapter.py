@@ -73,6 +73,7 @@ class CsvAdapter(BaseAdapter):
             reader = csv.DictReader(
                 csv_file,
                 delimiter=delimiter,
+                skipinitialspace=True,
             )
 
             if reader.fieldnames is None:
