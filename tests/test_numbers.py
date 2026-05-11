@@ -19,7 +19,7 @@ def test_normalize_integer_basic() -> None:
 
 def test_normalize_integer_with_commas() -> None:
     """
-    Verify commas are removed before integer parsing.
+    Verify US thousands separators are removed before integer parsing.
     """
     assert normalize_integer("1,000") == 1000
 
@@ -41,9 +41,18 @@ def test_normalize_float_basic() -> None:
 
 def test_normalize_float_with_commas() -> None:
     """
-    Verify commas are removed before float parsing.
+    Verify US comma-separated floats are normalized.
     """
     assert normalize_float("1,000.50") == 1000.5
+
+
+def test_normalize_float_with_european_decimals() -> None:
+    """
+    Verify European decimal values are normalized.
+    """
+    assert normalize_float("1.000,50") == 1000.5
+    assert normalize_float("250,75") == 250.75
+    assert normalize_float("5.500,00") == 5500.0
 
 
 def test_normalize_number_prefers_integer() -> None:
@@ -58,6 +67,22 @@ def test_normalize_number_uses_float_when_needed() -> None:
     Verify float conversion is used when integer fails.
     """
     assert normalize_number("100.25") == 100.25
+
+
+def test_normalize_number_supports_explicit_us_format() -> None:
+    """
+    Verify explicit US number format parsing.
+    """
+    assert normalize_number("1,000.50", number_format="us") == 1000.5
+    assert normalize_number("250.75", number_format="us") == 250.75
+
+
+def test_normalize_number_supports_explicit_eu_format() -> None:
+    """
+    Verify explicit EU number format parsing.
+    """
+    assert normalize_number("1.000,50", number_format="eu") == 1000.5
+    assert normalize_number("250,75", number_format="eu") == 250.75
 
 
 def test_preserve_invalid_values() -> None:
@@ -122,3 +147,32 @@ def test_clean_table_numbers() -> None:
 
     assert table.rows[0]["name"] == "Widget"
     assert table.rows[1]["name"] == "Tool"
+
+
+def test_clean_table_numbers_with_european_decimals() -> None:
+    """
+    Verify table-wide number normalization handles European decimals.
+    """
+    schema = Schema(
+        columns=[
+            Column(name="amount"),
+        ]
+    )
+
+    table = Table(
+        name="amounts",
+        schema=schema,
+        rows=[
+            {"amount": "1.000,50"},
+            {"amount": "250,75"},
+            {"amount": "5.500,00"},
+        ],
+    )
+
+    clean_table_numbers(table)
+
+    assert table.rows == [
+        {"amount": 1000.5},
+        {"amount": 250.75},
+        {"amount": 5500.0},
+    ]

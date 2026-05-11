@@ -21,6 +21,12 @@ NULL_VALUES = {
     "na",
     "nan",
     "-",
+    "#n/a",
+    "nil",
+    "--",
+    "?",
+    "not available",
+    "not_applicable",
 }
 
 

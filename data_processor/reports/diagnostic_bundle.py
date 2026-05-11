@@ -1,8 +1,9 @@
 """
 Diagnostic bundle utilities.
 
-This module combines quality reports, profiles, table metadata, and validation
-reports into one structured diagnostic report.
+This module combines quality reports, profiles, table metadata, parser diagnostics,
+row classification, type diagnostics, and validation reports into one structured
+diagnostic report.
 
 Purpose:
 - create one complete report object
@@ -14,8 +15,10 @@ Purpose:
 from typing import Any
 
 from data_processor.analysis.column_profile import profile_all_columns
+from data_processor.analysis.row_classification import classify_table_rows
 from data_processor.analysis.row_profile import profile_all_rows
 from data_processor.core.table import Table
+from data_processor.inference.type_diagnostics import analyze_table_type_evidence
 from data_processor.validators.constraints import ValidationResult
 from data_processor.validators.quality_report import generate_quality_report
 from data_processor.validators.validation_report import generate_validation_report
@@ -46,8 +49,11 @@ def build_diagnostic_bundle(
         "row_count": table.row_count(),
         "column_count": table.column_count(),
         "metadata": table.metadata,
+        "parse_diagnostics": table.metadata.get("parse_diagnostics", {}),
         "quality_report": generate_quality_report(table),
         "column_profiles": profile_all_columns(table),
         "row_profiles": profile_all_rows(table),
+        "row_classification": classify_table_rows(table),
+        "type_diagnostics": analyze_table_type_evidence(table),
         "validation_report": generate_validation_report(validation_results),
     }

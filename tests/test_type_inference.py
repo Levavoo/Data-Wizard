@@ -34,6 +34,12 @@ def test_infer_float_column() -> None:
     assert infer_column_type(values) == "float"
 
 
+def test_infer_european_float_column() -> None:
+    values = ["1.000,50", "250,75", "5.500,00", ""]
+
+    assert infer_column_type(values) == "float"
+
+
 def test_infer_date_column() -> None:
     values = ["2026-01-01", "01.02.2026", "2026/03/01"]
 
