@@ -80,6 +80,33 @@ def test_run_csv_pipeline_exports_cleaned_values(tmp_path: Path) -> None:
     assert "Bob,false,25.5" in content
 
 
+def test_run_csv_pipeline_converts_whitespace_only_cells_to_null(
+    tmp_path: Path,
+) -> None:
+    """
+    Verify whitespace-only CSV cells become None during pipeline cleaning.
+    """
+    input_path = tmp_path / "input.csv"
+    output_path = tmp_path / "output.csv"
+
+    input_path.write_text(
+        "Customer ID,Name,Email\n"
+        '1,Alice,"   "\n'
+        '2,Bob,"\t"\n',
+        encoding="utf-8",
+    )
+
+    result = run_csv_pipeline(
+        input_path=input_path,
+        output_path=output_path,
+    )
+
+    table = result["table"]
+
+    assert table.rows[0]["email"] is None
+    assert table.rows[1]["email"] is None
+
+
 def test_run_csv_pipeline_returns_diagnostic_bundle(tmp_path: Path) -> None:
     """
     Verify the pipeline returns a diagnostic bundle.
