@@ -119,6 +119,44 @@ def test_run_csv_pipeline_exports_european_decimal_values(tmp_path: Path) -> Non
     assert "3,5500.0" in content
 
 
+def test_run_csv_pipeline_reports_mixed_type_diagnostics(tmp_path: Path) -> None:
+    """
+    Verify mixed-type columns are reported in the diagnostic bundle.
+    """
+    input_path = tmp_path / "mixed_type_column.csv"
+    output_path = tmp_path / "output.csv"
+
+    input_path.write_text(
+        "Order ID,Amount\n"
+        "1,100\n"
+        "2,250.75\n"
+        "3,unknown\n"
+        "4,300\n"
+        "5,400\n",
+        encoding="utf-8",
+    )
+
+    result = run_csv_pipeline(
+        input_path=input_path,
+        output_path=output_path,
+    )
+
+    type_diagnostics = result["diagnostic_bundle"]["type_diagnostics"]
+
+    assert len(type_diagnostics["mixed_type_columns"]) == 1
+    mixed_column = type_diagnostics["mixed_type_columns"][0]
+
+    assert mixed_column["column"] == "amount"
+    assert mixed_column["dominant_type"] == "float"
+    assert mixed_column["invalid_values"] == [
+        {
+            "row_index": 2,
+            "value": "unknown",
+            "expected_type": "float",
+        }
+    ]
+
+
 def test_run_csv_pipeline_converts_whitespace_only_cells_to_null(
     tmp_path: Path,
 ) -> None:
@@ -172,6 +210,7 @@ def test_run_csv_pipeline_returns_diagnostic_bundle(tmp_path: Path) -> None:
     assert "quality_report" in diagnostic_bundle
     assert "column_profiles" in diagnostic_bundle
     assert "row_profiles" in diagnostic_bundle
+    assert "type_diagnostics" in diagnostic_bundle
     assert "validation_report" in diagnostic_bundle
 
 
@@ -204,4 +243,5 @@ def test_run_csv_pipeline_exports_diagnostic_report(tmp_path: Path) -> None:
     assert "quality_report" in report
     assert "column_profiles" in report
     assert "row_profiles" in report
+    assert "type_diagnostics" in report
     assert "validation_report" in report
