@@ -55,6 +55,7 @@ def test_build_diagnostic_bundle_contains_top_level_fields() -> None:
     assert "quality_report" in bundle
     assert "column_profiles" in bundle
     assert "row_profiles" in bundle
+    assert "row_classification" in bundle
     assert "type_diagnostics" in bundle
     assert "validation_report" in bundle
 
@@ -104,6 +105,40 @@ def test_build_diagnostic_bundle_row_profiles() -> None:
     assert len(row_profiles) == 3
     assert row_profiles[1]["missing_count"] == 1
     assert row_profiles[0]["duplicate_candidate"] is True
+
+
+def test_build_diagnostic_bundle_row_classification() -> None:
+    """
+    Verify suspicious row classification is included.
+    """
+    schema = Schema(
+        columns=[
+            Column(name="customer_id"),
+            Column(name="amount"),
+        ]
+    )
+
+    table = Table(
+        name="orders",
+        schema=schema,
+        rows=[
+            {"customer_id": "1", "amount": "100"},
+            {"customer_id": "TOTAL", "amount": "100"},
+            {"customer_id": "End of export", "amount": None},
+        ],
+    )
+
+    bundle = build_diagnostic_bundle(table)
+
+    row_classification = bundle["row_classification"]
+
+    assert len(row_classification["rows"]) == 3
+    assert len(row_classification["suspicious_rows"]) == 2
+    assert row_classification["summary"] == {
+        "normal_row": 1,
+        "summary_row": 1,
+        "footer_row": 1,
+    }
 
 
 def test_build_diagnostic_bundle_type_diagnostics() -> None:
