@@ -14,6 +14,7 @@ from datetime import date
 from datetime import datetime
 from typing import Any
 
+from data_processor.cleaners.numbers import _clean_numeric_string
 from data_processor.core.table import Table
 
 NULL_VALUES = {
@@ -54,7 +55,10 @@ def clean_numeric_string(value: str) -> str:
     """
     Prepare a numeric string for type inference.
     """
-    return value.strip().replace(",", "").replace("_", "")
+    return _clean_numeric_string(
+        value=value,
+        number_format="auto",
+    )
 
 
 def infer_table_types(table: Table) -> None:
