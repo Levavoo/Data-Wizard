@@ -16,84 +16,103 @@ Raw Values
 
 ---
 
-# Why Number Normalization Matters
+## Supported Number Formats
 
-Real-world datasets often represent numbers as text.
-
-Examples:
+The number cleaner supports these policies:
 
 ```text
-"100"
-"100.50"
-" 1,000 "
-"1_000"
+auto
+us
+eu
 ```
 
-Without normalization:
-
-- sorting can be incorrect
-- numeric validation becomes harder
-- aggregation becomes unreliable
-- calculations may fail
-
-Project standard:
+Default:
 
 ```python
-int
-float
+number_format="auto"
 ```
 
 ---
 
-# Main Functions
+## US Format
 
-## `normalize_integer(value)`
+Examples:
+
+```text
+1,000.50 → 1000.5
+250.75   → 250.75
+5,500.00 → 5500.0
+```
+
+Use explicitly:
+
+```python
+normalize_number("1,000.50", number_format="us")
+```
+
+---
+
+## European Format
+
+Examples:
+
+```text
+1.000,50 → 1000.5
+250,75   → 250.75
+5.500,00 → 5500.0
+```
+
+Use explicitly:
+
+```python
+normalize_number("1.000,50", number_format="eu")
+```
+
+---
+
+## Auto Detection
+
+Auto mode detects likely format from one value.
+
+Rules:
+
+```text
+comma after dot → EU
+comma with one or two decimal digits and no dot → EU
+default fallback → US
+```
+
+Examples:
+
+```text
+1.000,50 → EU → 1000.5
+250,75   → EU → 250.75
+1,000.50 → US → 1000.5
+```
+
+Single-value auto detection cannot resolve every ambiguous case perfectly.
+
+---
+
+## Main Functions
+
+### `normalize_integer(value, number_format="auto")`
 
 Attempts to convert integer-like values into Python `int`.
 
-Examples:
-
-```text
-"100"
-→ 100
-
-" 1,000 "
-→ 1000
-
-"1_000"
-→ 1000
-```
-
 Invalid values remain unchanged.
-
-Example:
-
-```text
-"Alice"
-→ "Alice"
-```
 
 ---
 
-## `normalize_float(value)`
+### `normalize_float(value, number_format="auto")`
 
 Attempts to convert float-like values into Python `float`.
 
-Examples:
-
-```text
-"100.50"
-→ 100.5
-
-" 1,000.25 "
-→ 1000.25
-```
-
 Invalid values remain unchanged.
 
 ---
 
-## `normalize_number(value)`
+### `normalize_number(value, number_format="auto")`
 
 Generic number normalizer.
 
@@ -105,22 +124,9 @@ try integer first
 → if both fail, preserve original value
 ```
 
-Examples:
-
-```text
-"100"
-→ 100
-
-"100.50"
-→ 100.5
-
-"Alice"
-→ "Alice"
-```
-
 ---
 
-## `clean_table_numbers(table)`
+### `clean_table_numbers(table, number_format="auto")`
 
 Applies number normalization to every value in a table.
 
@@ -130,44 +136,9 @@ Behavior:
 mutates rows in place
 ```
 
-Flow:
-
-```text
-Table
-→ iterate rows
-→ normalize numbers
-→ update rows
-```
-
 ---
 
-# Helper Functions
-
-## `_clean_numeric_string(value)`
-
-Prepares string values for numeric parsing.
-
-Current cleanup:
-
-```text
-trim whitespace
-remove commas
-remove underscores
-```
-
-Examples:
-
-```text
-" 1,000 "
-→ "1000"
-
-"1_000"
-→ "1000"
-```
-
----
-
-# Preserved Values
+## Preserved Values
 
 The cleaner preserves:
 
@@ -180,57 +151,30 @@ False
 It also preserves invalid strings:
 
 ```text
-"Alice"
-"Germany"
-"100 EUR"
+Alice
+Germany
+100 EUR
 ```
 
 ---
 
-# Important Design Principle
+## Important Design Principle
 
 The number cleaner is allowed to cast values.
 
 Example:
 
 ```text
-"100"
-→ 100
+"100" → 100
 ```
 
 This differs from inference modules, which only detect likely types.
 
----
-
-# Current Scope
-
-Supported:
-
-```text
-integers
-floats
-commas
-underscores
-surrounding whitespace
-existing int values
-existing float values
-None values
-```
-
-Not supported yet:
-
-```text
-locale-aware numbers
-currency symbols
-percentages
-scientific notation policies
-decimal precision control
-accounting formats
-```
+Adapters must not parse numeric locale semantics.
 
 ---
 
-# Pipeline Position
+## Pipeline Position
 
 Recommended pipeline order:
 
@@ -246,37 +190,22 @@ Parsing
 
 ---
 
-# Example
+## Current Limitations
 
-```python
-from data_processor.cleaners.numbers import clean_table_numbers
+Not implemented yet:
 
-clean_table_numbers(table)
-```
-
-Before:
-
-```python
-{
-    "quantity": "1,000",
-    "price": "25.50",
-    "name": "Alice"
-}
-```
-
-After:
-
-```python
-{
-    "quantity": 1000,
-    "price": 25.5,
-    "name": "Alice"
-}
+```text
+column-level number format detection
+numeric parsing diagnostics
+currency symbols
+percentages
+Decimal precision preservation
+accounting formats
 ```
 
 ---
 
-# Developer Notes
+## Developer Notes
 
 This module should remain:
 
@@ -285,21 +214,4 @@ This module should remain:
 - explicit
 - easy to test
 
-Avoid adding locale or currency logic here too early.
-
-Those should be separate specialized features later.
-
----
-
-# Future Improvements
-
-Possible future additions:
-
-- locale-aware parsing
-- currency normalization
-- percentage parsing
-- Decimal support
-- strict parsing mode
-- column-specific numeric policies
-- numeric error reporting
-- precision preservation
+Locale-aware behavior is implemented in the cleaner layer, not the CSV adapter.
