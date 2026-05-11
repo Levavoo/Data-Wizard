@@ -72,13 +72,23 @@ Examples:
 "5.500,00" → 5500.0
 ```
 
-This protects the interaction between:
+---
+
+### `test_run_csv_pipeline_reports_mixed_type_diagnostics`
+
+Verifies mostly numeric mixed-type columns are reported in the diagnostic bundle.
+
+Example:
 
 ```text
-CSV parsing
-→ type inference
-→ type-aware casting
-→ CSV export
+amount values: 100, 250.75, unknown, 300, 400
+```
+
+Expected diagnostic:
+
+```text
+dominant_type = float
+invalid value = row 2, unknown
 ```
 
 ---
@@ -91,13 +101,13 @@ Verifies whitespace-only CSV cells become `None` during normal pipeline executio
 
 ### `test_run_csv_pipeline_returns_diagnostic_bundle`
 
-Verifies the pipeline returns a diagnostic bundle.
+Verifies the pipeline returns a diagnostic bundle including type diagnostics.
 
 ---
 
 ### `test_run_csv_pipeline_exports_diagnostic_report`
 
-Verifies the pipeline exports a JSON diagnostic report when `report_path` is provided.
+Verifies the pipeline exports a JSON diagnostic report including type diagnostics when `report_path` is provided.
 
 ---
 
@@ -115,12 +125,6 @@ Individual modules already have their own dedicated tests.
 
 ```bash
 python -m pytest tests/test_pipeline.py
-```
-
-Expected result:
-
-```text
-all tests pass
 ```
 
 ---
