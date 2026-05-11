@@ -6,17 +6,9 @@ Tests the number cleaning module.
 
 This verifies that numeric-like string values are normalized into Python numeric types.
 
-Architecture:
-
-```text
-Raw Values
-→ Number Cleaner
-→ Standardized Numeric Values
-```
-
 ---
 
-# Tested File
+## Tested File
 
 ```text
 data_processor/cleaners/numbers.py
@@ -24,108 +16,98 @@ data_processor/cleaners/numbers.py
 
 ---
 
-# Current Test Coverage
+## Current Test Coverage
 
-## `test_normalize_integer_basic`
+### Basic integers
 
-Verifies integer-like strings become:
-
-```python
-int
-```
+Verifies integer-like strings become `int`.
 
 Examples:
 
 ```text
-"100"
-" 42 "
+"100" → 100
+" 42 " → 42
 ```
 
 ---
 
-## `test_normalize_integer_with_commas`
+### US thousands separators
 
-Verifies commas are removed before parsing.
+Verifies US-style commas are handled.
 
 Example:
 
 ```text
-"1,000"
-→ 1000
+"1,000" → 1000
 ```
 
 ---
 
-## `test_normalize_integer_with_underscores`
+### Underscore separators
 
 Verifies underscores are removed before parsing.
 
 Example:
 
 ```text
-"1_000"
-→ 1000
+"1_000" → 1000
 ```
 
 ---
 
-## `test_normalize_float_basic`
+### Basic floats
 
-Verifies float-like strings become:
-
-```python
-float
-```
+Verifies float-like strings become `float`.
 
 Examples:
 
 ```text
-"100.5"
-" 42.25 "
+"100.5" → 100.5
+" 42.25 " → 42.25
 ```
 
 ---
 
-## `test_normalize_float_with_commas`
+### US floats
 
-Verifies comma-separated floats are normalized.
+Verifies US comma-separated floats are normalized.
 
 Example:
 
 ```text
-"1,000.50"
-→ 1000.5
+"1,000.50" → 1000.5
 ```
 
 ---
 
-## `test_normalize_number_prefers_integer`
+### European decimals
 
-Verifies integer conversion is prioritized.
+Verifies EU-style numeric strings are normalized.
 
-Example:
+Examples:
 
 ```text
-"100"
-→ 100
+"1.000,50" → 1000.5
+"250,75" → 250.75
+"5.500,00" → 5500.0
 ```
 
 ---
 
-## `test_normalize_number_uses_float_when_needed`
+### Explicit format policies
 
-Verifies float conversion is used when integer parsing fails.
+Verifies explicit `number_format` policies.
 
-Example:
+Examples:
 
-```text
-"100.25"
-→ 100.25
+```python
+normalize_number("1,000.50", number_format="us")
+normalize_number("1.000,50", number_format="eu")
 ```
 
 ---
 
-## `test_preserve_invalid_values`
+### Invalid values
 
 Verifies invalid numeric values remain unchanged.
 
@@ -138,110 +120,33 @@ Examples:
 
 ---
 
-## `test_preserve_none`
+### Preserved values
 
-Verifies:
+Verifies these are preserved:
 
 ```python
 None
-```
-
-remains unchanged.
-
----
-
-## `test_preserve_booleans`
-
-Verifies Python bool values remain unchanged.
-
-Examples:
-
-```python
 True
 False
 ```
 
 ---
 
-## `test_clean_table_numbers`
+### Table-wide normalization
 
-Verifies table-wide number normalization.
+Verifies `clean_table_numbers()` handles both US and EU-style numbers.
 
-Flow:
+---
 
-```text
-Table
-→ iterate rows
-→ normalize numbers
-→ update rows
+## Run Tests
+
+```bash
+python -m pytest tests/test_numbers.py
 ```
 
 ---
 
-# Important Design Rule
-
-The number cleaner is allowed to cast values.
-
-Example:
-
-```text
-"100"
-→ 100
-```
-
-This differs from inference modules, which only detect likely types.
-
----
-
-# Why Number Normalization Matters
-
-Without normalization:
-
-```text
-"100"
-"1,000"
-"100.50"
-```
-
-would remain text values.
-
-This causes problems for:
-
-- sorting
-- aggregation
-- validation
-- calculations
-- statistics
-
----
-
-# Run Tests
-
-```powershell
-pytest tests\test_numbers.py
-```
-
-Expected result:
-
-```text
-11 passed
-```
-
----
-
-# Recommended Validation Workflow
-
-```powershell
-ruff check data_processor\cleaners\numbers.py tests\test_numbers.py
-
-black data_processor\cleaners\numbers.py tests\test_numbers.py
-
-pytest tests\test_numbers.py
-```
-
----
-
-# Developer Notes
+## Developer Notes
 
 Number normalization should stay:
 
@@ -250,18 +155,4 @@ Number normalization should stay:
 - format-independent
 - easy to test
 
-Avoid adding locale-aware logic too early.
-
----
-
-# Future Improvements
-
-Possible future additions:
-
-- locale-aware numbers
-- Decimal support
-- currency parsing
-- percentages
-- accounting formats
-- scientific notation
-- precision control
+Locale-aware behavior belongs in the cleaner layer, not the CSV adapter.
