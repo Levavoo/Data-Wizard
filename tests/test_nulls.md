@@ -16,7 +16,7 @@ Raw Values
 
 ---
 
-# Tested File
+## Tested File
 
 ```text
 data_processor/cleaners/nulls.py
@@ -24,20 +24,40 @@ data_processor/cleaners/nulls.py
 
 ---
 
-# Current Test Coverage
+## Current Test Coverage
 
-## `test_normalize_empty_string`
+### `test_normalize_empty_string`
 
 Verifies:
 
 ```text
-""
-→ None
+"" → None
 ```
 
 ---
 
-## `test_normalize_null_string`
+### `test_normalize_whitespace_only_strings`
+
+Verifies whitespace-only values become `None`.
+
+Examples:
+
+```text
+"   "
+"\t"
+"\n"
+" \t \n "
+```
+
+Expected result:
+
+```python
+None
+```
+
+---
+
+### `test_normalize_null_string`
 
 Verifies textual null representations.
 
@@ -57,7 +77,7 @@ None
 
 ---
 
-## `test_normalize_na_values`
+### `test_normalize_na_values`
 
 Verifies NA-style placeholders.
 
@@ -77,7 +97,7 @@ None
 
 ---
 
-## `test_preserve_regular_values`
+### `test_preserve_regular_values`
 
 Verifies valid values remain unchanged.
 
@@ -90,7 +110,7 @@ Examples:
 
 ---
 
-## `test_preserve_non_string_values`
+### `test_preserve_non_string_values`
 
 Verifies non-string values are not modified.
 
@@ -103,7 +123,7 @@ True
 
 ---
 
-## `test_clean_table_nulls`
+### `test_clean_table_nulls`
 
 Verifies table-wide null cleaning.
 
@@ -118,22 +138,35 @@ Table
 
 ---
 
-# Important Design Rule
+### `test_clean_table_nulls_handles_whitespace_only_cells`
+
+Verifies table-wide null cleaning also converts whitespace-only strings to `None`.
+
+Examples:
+
+```text
+"   " → None
+"\t"  → None
+" \n " → None
+```
+
+---
+
+## Important Design Rule
 
 The cleaner layer is allowed to modify values.
 
 Example:
 
 ```text
-"N/A"
-→ None
+"N/A" → None
 ```
 
 This differs from inference modules, which only detect metadata.
 
 ---
 
-# Why This Matters
+## Why This Matters
 
 Consistent null handling improves:
 
@@ -150,16 +183,17 @@ Without normalization:
 ""
 "null"
 "N/A"
+"   "
 ```
 
 would all behave differently.
 
 ---
 
-# Run Tests
+## Run Tests
 
-```powershell
-pytest
+```bash
+python -m pytest tests/test_nulls.py
 ```
 
 Expected result:
@@ -170,7 +204,7 @@ all tests pass
 
 ---
 
-# Developer Notes
+## Developer Notes
 
 Null normalization should happen early in the cleaning pipeline.
 
@@ -179,20 +213,20 @@ Recommended order:
 ```text
 Parsing
 → Null Cleaning
+→ Text Cleaning
 → Type Inference
-→ Value Cleaning
+→ Type-Aware Casting
 → Validation
 ```
 
 ---
 
-# Future Improvements
+## Future Improvements
 
 Possible future additions:
 
 - configurable null dictionaries
 - column-specific null rules
-- whitespace-only policies
 - statistics tracking
 - quarantine handling
 - locale-aware null values
