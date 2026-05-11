@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Tests the basic type inference module.
+Tests the type inference module.
 
-This verifies that raw string values can be inspected and classified without converting them.
+This verifies that raw values can be inspected and classified without converting them.
 
 ---
 
-# Tested File
+## Tested File
 
 ```text
 data_processor/inference/type_inference.py
@@ -16,9 +16,9 @@ data_processor/inference/type_inference.py
 
 ---
 
-# Current Test Coverage
+## Current Test Coverage
 
-## `test_infer_null_column`
+### Null columns
 
 Verifies null-like values are detected as:
 
@@ -26,18 +26,9 @@ Verifies null-like values are detected as:
 null
 ```
 
-Examples:
-
-```text
-""
-"null"
-"None"
-"n/a"
-```
-
 ---
 
-## `test_infer_boolean_column`
+### Boolean columns
 
 Verifies boolean-like values are detected as:
 
@@ -45,18 +36,9 @@ Verifies boolean-like values are detected as:
 boolean
 ```
 
-Examples:
-
-```text
-true
-FALSE
-yes
-no
-```
-
 ---
 
-## `test_infer_integer_column`
+### Integer columns
 
 Verifies integer-like values are detected as:
 
@@ -64,15 +46,9 @@ Verifies integer-like values are detected as:
 integer
 ```
 
-Example:
-
-```text
-"300"
-```
-
 ---
 
-## `test_infer_float_column`
+### Float columns
 
 Verifies decimal values are detected as:
 
@@ -80,153 +56,43 @@ Verifies decimal values are detected as:
 float
 ```
 
-Example:
+Examples:
 
 ```text
-"300.75"
+1.5
+2.0
+300.75
 ```
 
 ---
 
-## `test_infer_date_column`
+### European float columns
 
-Verifies supported date formats are detected as:
+Verifies EU-style decimal values are detected as:
 
 ```text
-date
+float
 ```
 
 Examples:
 
 ```text
-2026-01-01
-01.02.2026
-2026/03/01
+1.000,50
+250,75
+5.500,00
 ```
 
 ---
 
-## `test_infer_datetime_column`
+### Date and datetime columns
 
-Verifies supported datetime formats are detected as:
-
-```text
-datetime
-```
-
-Examples:
-
-```text
-2026-01-01 10:30:00
-2026-01-02T11:45:00
-```
+Verifies supported date and datetime formats are detected correctly.
 
 ---
 
-## `test_infer_string_column`
+### Existing Python values
 
-Verifies normal text values are detected as:
-
-```text
-string
-```
-
----
-
-## `test_infer_table_types_updates_schema_columns`
-
-Verifies that:
-
-```text
-infer_table_types(table)
-```
-
-updates:
-
-```text
-column.inferred_type
-```
-
-inside the table schema.
-
----
-
-# Important Design Rule
-
-These tests confirm that type inference does not clean or convert data.
-
-Example:
-
-```text
-"1"
-```
-
-may be inferred as:
-
-```text
-integer
-```
-
-but it remains stored as:
-
-```text
-"1"
-```
-
-Actual conversion happens later in cleaner/caster modules.
-
----
-
-# Run Tests
-
-```powershell
-pytest
-```
-
----
-
-# Developer Notes
-
-Type inference should stay:
-
-- deterministic
-- explicit
-- easy to test
-- independent from file formats
-
-Avoid hidden behavior from libraries such as pandas.
-
----
-
-# Existing Python Value Support
-
-Type inference supports both raw string values and already-cleaned Python values.
-
-This is important because the pipeline runs inference twice:
-
-```text
-before casting
-after casting
-```
-
-Before casting:
-
-```text
-"1"
-→ integer
-"yes"
-→ boolean
-```
-
-After casting:
-
-```python
-1
-→ integer
-
-True
-→ boolean
-```
+Type inference supports both raw strings and already-cleaned Python values.
 
 Supported cleaned Python values:
 
@@ -239,28 +105,49 @@ Supported cleaned Python values:
 | `datetime` | `datetime` |
 | `None` | ignored as null |
 
-Important:
+---
 
-```python
-bool
+## Important Design Rule
+
+These tests confirm that type inference does not clean or convert data.
+
+Example:
+
+```text
+"1.000,50"
 ```
 
-is checked before:
+may be inferred as:
 
-```python
-int
+```text
+float
 ```
 
-because in Python:
+but it remains stored as:
 
-```python
-isinstance(True, int)
+```text
+"1.000,50"
 ```
 
-returns:
+Actual conversion happens later in cleaner/caster modules.
 
-```python
-True
+---
+
+## Run Tests
+
+```bash
+python -m pytest tests/test_type_inference.py
 ```
 
-So booleans must be handled explicitly to avoid treating `True` and `False` as `1` and `0`.
+---
+
+## Developer Notes
+
+Type inference should stay:
+
+- deterministic
+- explicit
+- easy to test
+- independent from file formats
+
+Avoid hidden behavior from libraries such as pandas.
