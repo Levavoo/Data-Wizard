@@ -16,7 +16,7 @@ Raw Values
 
 ---
 
-# Why Null Normalization Matters
+## Why Null Normalization Matters
 
 Real-world datasets often represent missing values inconsistently.
 
@@ -28,8 +28,11 @@ Examples:
 "NULL"
 "None"
 "N/A"
-"na"
-"-"
+"#N/A"
+"NIL"
+"--"
+"?"
+"not available"
 ```
 
 Without normalization:
@@ -47,19 +50,24 @@ None
 
 ---
 
-# Main Functions
+## Main Functions
 
-## `normalize_null(value)`
+### `normalize_null(value)`
 
 Normalizes one value.
 
 Examples:
 
 ```text
-""       → None
-"null"   → None
-" NA "   → None
-"-"      → None
+""              → None
+"null"          → None
+" NA "          → None
+"#N/A"          → None
+"NIL"           → None
+"--"            → None
+"?"             → None
+"not available" → None
+"not_applicable" → None
 ```
 
 Non-null values remain unchanged.
@@ -67,13 +75,12 @@ Non-null values remain unchanged.
 Example:
 
 ```text
-"Alice"
-→ "Alice"
+"Alice" → "Alice"
 ```
 
 ---
 
-## `clean_table_nulls(table)`
+### `clean_table_nulls(table)`
 
 Applies null normalization to every value in the table.
 
@@ -94,7 +101,7 @@ Table
 
 ---
 
-# Supported Null Values
+## Supported Null Values
 
 Current supported null representations:
 
@@ -106,6 +113,12 @@ Current supported null representations:
 "na"
 "nan"
 "-"
+"#n/a"
+"nil"
+"--"
+"?"
+"not available"
+"not_applicable"
 ```
 
 Matching is:
@@ -116,13 +129,31 @@ Matching is:
 Example:
 
 ```text
-" N/A "
-→ None
+" NIL " → None
 ```
 
 ---
 
-# Example
+## Ambiguous Tokens
+
+The following tokens are intentionally not default null values:
+
+```text
+unknown
+missing
+```
+
+Reason:
+
+```text
+They often mean missing data, but they can also be meaningful category values.
+```
+
+Future cleaning profiles may allow project-specific handling for these values.
+
+---
+
+## Example
 
 ```python
 from data_processor.cleaners.nulls import clean_table_nulls
@@ -132,19 +163,19 @@ clean_table_nulls(table)
 
 ---
 
-# Before Cleaning
+## Before Cleaning
 
 ```python
 {
     "country": "",
-    "email": "N/A",
+    "email": "#N/A",
     "name": "Alice"
 }
 ```
 
 ---
 
-# After Cleaning
+## After Cleaning
 
 ```python
 {
@@ -156,29 +187,22 @@ clean_table_nulls(table)
 
 ---
 
-# Important Design Principle
+## Important Design Principle
 
 Null cleaning is one dedicated pipeline stage.
 
 This keeps responsibilities separated:
 
 ```text
-Adapter
-→ parsing
-
-Inference
-→ detection
-
-Cleaner
-→ modification
-
-Validator
-→ rule checking
+Adapter → parsing
+Inference → detection
+Cleaner → modification
+Validator → rule checking
 ```
 
 ---
 
-# Developer Notes
+## Developer Notes
 
 This module intentionally avoids:
 
@@ -191,14 +215,13 @@ It only normalizes missing values.
 
 ---
 
-# Future Improvements
+## Future Improvements
 
 Possible future additions:
 
 - configurable null policies
 - column-specific null rules
-- whitespace-only policies
+- null token statistics
+- cleaning profiles
 - locale-aware null values
-- null statistics
 - row quarantine support
-- configurable placeholder handling
