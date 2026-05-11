@@ -10,6 +10,7 @@ It does not clean values, infer types, validate constraints, or export data.
 import csv
 
 from data_processor.adapters.base_adapter import BaseAdapter
+from data_processor.adapters.parse_diagnostics import ParseDiagnostics
 from data_processor.core.column import Column
 from data_processor.core.schema import Schema
 from data_processor.core.table import Table
@@ -30,6 +31,7 @@ class CsvAdapter(BaseAdapter):
     - make duplicate headers unique
     - create Schema
     - create Table
+    - attach parse diagnostics
 
     Not responsible for:
     - cleaning
@@ -87,6 +89,15 @@ class CsvAdapter(BaseAdapter):
         preamble_rows = rows[:header_row_index]
 
         normalized_headers = self._normalize_headers(original_headers)
+        parse_diagnostics = self._build_parse_diagnostics(
+            rows=rows,
+            original_headers=original_headers,
+            normalized_headers=normalized_headers,
+            header_row_index=header_row_index,
+            preamble_rows=preamble_rows,
+            delimiter=delimiter,
+            encoding=encoding,
+        )
 
         schema = self._build_schema(
             original_headers=original_headers,
@@ -111,6 +122,7 @@ class CsvAdapter(BaseAdapter):
         table.add_metadata("delimiter", delimiter)
         table.add_metadata("header_row_index", header_row_index)
         table.add_metadata("preamble_rows", preamble_rows)
+        table.add_metadata("parse_diagnostics", parse_diagnostics.to_dict())
 
         return table
 
@@ -284,6 +296,116 @@ class CsvAdapter(BaseAdapter):
             normalized_headers.append(unique_header)
 
         return normalized_headers
+
+    def _build_parse_diagnostics(
+        self,
+        rows: list[list[str]],
+        original_headers: list[str],
+        normalized_headers: list[str],
+        header_row_index: int,
+        preamble_rows: list[list[str]],
+        delimiter: str,
+        encoding: str,
+    ) -> ParseDiagnostics:
+        """
+        Build parser diagnostics from raw CSV structure.
+
+        Args:
+            rows:
+                Raw CSV rows.
+
+            original_headers:
+                Header row before normalization.
+
+            normalized_headers:
+                Unique normalized headers.
+
+            header_row_index:
+                Zero-based source row index used as the header.
+
+            preamble_rows:
+                Rows before the detected header.
+
+            delimiter:
+                Detected delimiter.
+
+            encoding:
+                Detected encoding.
+
+        Returns:
+            ParseDiagnostics object.
+        """
+        diagnostics = ParseDiagnostics(
+            header_row_index=header_row_index,
+            preamble_row_count=len(preamble_rows),
+            delimiter=delimiter,
+            encoding=encoding,
+        )
+
+        header_count = len(normalized_headers)
+        diagnostics.empty_headers = [
+            index for index, header in enumerate(original_headers) if not header.strip()
+        ]
+        diagnostics.duplicate_headers = self._find_duplicate_headers(original_headers)
+
+        if header_row_index > 0:
+            diagnostics.add_warning("Header row was not the first source row.")
+
+        if diagnostics.empty_headers:
+            diagnostics.add_warning("One or more headers were empty.")
+
+        if diagnostics.duplicate_headers:
+            diagnostics.add_warning("One or more headers were duplicated.")
+
+        for source_row_index, raw_row in enumerate(rows[header_row_index + 1 :], start=header_row_index + 1):
+            row_field_count = len(raw_row)
+
+            if row_field_count > header_count:
+                diagnostics.add_extra_fields(
+                    row_index=source_row_index,
+                    count=row_field_count - header_count,
+                )
+
+            elif row_field_count < header_count:
+                diagnostics.add_missing_fields(
+                    row_index=source_row_index,
+                    count=header_count - row_field_count,
+                )
+
+        if diagnostics.rows_with_extra_fields:
+            diagnostics.add_warning("One or more rows contain extra fields.")
+
+        if diagnostics.rows_with_missing_fields:
+            diagnostics.add_warning("One or more rows contain missing fields.")
+
+        return diagnostics
+
+    def _find_duplicate_headers(
+        self,
+        headers: list[str],
+    ) -> list[str]:
+        """
+        Find duplicated headers after standard header normalization.
+
+        Args:
+            headers:
+                Raw CSV headers.
+
+        Returns:
+            List of duplicate normalized header base names.
+        """
+        seen: set[str] = set()
+        duplicates: list[str] = []
+
+        for header in headers:
+            normalized_header = self._normalize_header(header)
+
+            if normalized_header in seen and normalized_header not in duplicates:
+                duplicates.append(normalized_header)
+
+            seen.add(normalized_header)
+
+        return duplicates
 
     def _build_schema(
         self,
