@@ -49,12 +49,6 @@ Examples:
 " \t \n "
 ```
 
-Expected result:
-
-```python
-None
-```
-
 ---
 
 ### `test_normalize_null_string`
@@ -67,12 +61,6 @@ Examples:
 "null"
 "NULL"
 " None "
-```
-
-Expected result:
-
-```python
-None
 ```
 
 ---
@@ -89,10 +77,35 @@ Examples:
 " nan "
 ```
 
-Expected result:
+---
 
-```python
-None
+### `test_normalize_extended_null_tokens`
+
+Verifies conservative extended null tokens.
+
+Examples:
+
+```text
+"#N/A" → None
+" NIL " → None
+"--" → None
+"?" → None
+"not available" → None
+"NOT AVAILABLE" → None
+"not_applicable" → None
+```
+
+---
+
+### `test_preserve_ambiguous_null_like_values`
+
+Verifies ambiguous tokens remain normal values by default.
+
+Examples:
+
+```text
+"unknown" → "unknown"
+"missing" → "missing"
 ```
 
 ---
@@ -127,28 +140,17 @@ True
 
 Verifies table-wide null cleaning.
 
-Flow:
-
-```text
-Table
-→ iterate rows
-→ normalize values
-→ update rows
-```
-
 ---
 
 ### `test_clean_table_nulls_handles_whitespace_only_cells`
 
 Verifies table-wide null cleaning also converts whitespace-only strings to `None`.
 
-Examples:
+---
 
-```text
-"   " → None
-"\t"  → None
-" \n " → None
-```
+### `test_clean_table_nulls_handles_extended_tokens`
+
+Verifies table-wide null cleaning handles conservative extended null tokens.
 
 ---
 
@@ -183,6 +185,10 @@ Without normalization:
 ""
 "null"
 "N/A"
+"#N/A"
+"NIL"
+"--"
+"?"
 "   "
 ```
 
@@ -218,6 +224,8 @@ Parsing
 → Type-Aware Casting
 → Validation
 ```
+
+Ambiguous values such as `unknown` and `missing` are intentionally preserved until configurable cleaning profiles exist.
 
 ---
 
