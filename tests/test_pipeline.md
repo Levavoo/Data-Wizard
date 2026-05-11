@@ -50,27 +50,11 @@ Verifies the pipeline returns correct quality report values.
 
 Verifies cleaned values are written to the output file.
 
-Examples:
-
-```text
-" Alice " → "Alice"
-"YES" → "true"
-"25.50" → "25.5"
-```
-
 ---
 
 ### `test_run_csv_pipeline_exports_european_decimal_values`
 
 Verifies European decimal values are inferred, cast, and exported correctly.
-
-Examples:
-
-```text
-"1.000,50" → 1000.5
-"250,75" → 250.75
-"5.500,00" → 5500.0
-```
 
 ---
 
@@ -78,18 +62,29 @@ Examples:
 
 Verifies mostly numeric mixed-type columns are reported in the diagnostic bundle.
 
-Example:
+---
+
+### `test_run_csv_pipeline_reports_suspicious_rows`
+
+Verifies suspicious rows are reported in the diagnostic bundle without removing rows.
+
+Example input:
 
 ```text
-amount values: 100, 250.75, unknown, 300, 400
+1,100
+2,250
+TOTAL,350
+End of export,
 ```
 
-Expected diagnostic:
+Expected classification summary:
 
 ```text
-dominant_type = float
-invalid value = row 2, unknown
+summary_row: 1
+footer_row: 1
 ```
+
+The table row count remains unchanged.
 
 ---
 
@@ -101,13 +96,13 @@ Verifies whitespace-only CSV cells become `None` during normal pipeline executio
 
 ### `test_run_csv_pipeline_returns_diagnostic_bundle`
 
-Verifies the pipeline returns a diagnostic bundle including type diagnostics.
+Verifies the pipeline returns a diagnostic bundle including row classification and type diagnostics.
 
 ---
 
 ### `test_run_csv_pipeline_exports_diagnostic_report`
 
-Verifies the pipeline exports a JSON diagnostic report including type diagnostics when `report_path` is provided.
+Verifies the pipeline exports a JSON diagnostic report including row classification and type diagnostics when `report_path` is provided.
 
 ---
 
