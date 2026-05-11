@@ -55,6 +55,7 @@ def test_build_diagnostic_bundle_contains_top_level_fields() -> None:
     assert "quality_report" in bundle
     assert "column_profiles" in bundle
     assert "row_profiles" in bundle
+    assert "type_diagnostics" in bundle
     assert "validation_report" in bundle
 
 
@@ -103,6 +104,40 @@ def test_build_diagnostic_bundle_row_profiles() -> None:
     assert len(row_profiles) == 3
     assert row_profiles[1]["missing_count"] == 1
     assert row_profiles[0]["duplicate_candidate"] is True
+
+
+def test_build_diagnostic_bundle_type_diagnostics() -> None:
+    """
+    Verify mixed-type diagnostics are included.
+    """
+    schema = Schema(
+        columns=[
+            Column(name="amount"),
+            Column(name="country"),
+        ]
+    )
+
+    table = Table(
+        name="orders",
+        schema=schema,
+        rows=[
+            {"amount": "100", "country": "Germany"},
+            {"amount": "250.75", "country": "France"},
+            {"amount": "unknown", "country": "Spain"},
+            {"amount": "300", "country": "Italy"},
+            {"amount": "400", "country": "Poland"},
+        ],
+    )
+
+    bundle = build_diagnostic_bundle(table)
+
+    type_diagnostics = bundle["type_diagnostics"]
+
+    assert "columns" in type_diagnostics
+    assert "mixed_type_columns" in type_diagnostics
+    assert len(type_diagnostics["mixed_type_columns"]) == 1
+    assert type_diagnostics["mixed_type_columns"][0]["column"] == "amount"
+    assert type_diagnostics["mixed_type_columns"][0]["dominant_type"] == "float"
 
 
 def test_build_diagnostic_bundle_validation_report() -> None:
