@@ -36,26 +36,13 @@ data_processor/core/pipeline.py
 
 ### `test_run_csv_pipeline_creates_output_file`
 
-Verifies:
-
-- pipeline runs successfully
-- output CSV file is created
-- result contains table
-- result contains quality report
-- result contains diagnostic bundle
+Verifies pipeline execution and output file creation.
 
 ---
 
 ### `test_run_csv_pipeline_quality_report`
 
 Verifies the pipeline returns correct quality report values.
-
-Checks:
-
-- table name
-- row count
-- column count
-- missing values by column
 
 ---
 
@@ -73,18 +60,32 @@ Examples:
 
 ---
 
-### `test_run_csv_pipeline_converts_whitespace_only_cells_to_null`
+### `test_run_csv_pipeline_exports_european_decimal_values`
 
-Verifies whitespace-only CSV cells become `None` during normal pipeline execution.
+Verifies European decimal values are inferred, cast, and exported correctly.
 
 Examples:
 
 ```text
-"   " → None
-"\t" → None
+"1.000,50" → 1000.5
+"250,75" → 250.75
+"5.500,00" → 5500.0
 ```
 
-This protects the expected interaction between CSV parsing, null cleaning, and text cleaning.
+This protects the interaction between:
+
+```text
+CSV parsing
+→ type inference
+→ type-aware casting
+→ CSV export
+```
+
+---
+
+### `test_run_csv_pipeline_converts_whitespace_only_cells_to_null`
+
+Verifies whitespace-only CSV cells become `None` during normal pipeline execution.
 
 ---
 
@@ -92,28 +93,11 @@ This protects the expected interaction between CSV parsing, null cleaning, and t
 
 Verifies the pipeline returns a diagnostic bundle.
 
-Checks:
-
-- table name
-- row count
-- column count
-- quality report section
-- column profile section
-- row profile section
-- validation report section
-
 ---
 
 ### `test_run_csv_pipeline_exports_diagnostic_report`
 
 Verifies the pipeline exports a JSON diagnostic report when `report_path` is provided.
-
-Checks:
-
-- cleaned CSV output exists
-- JSON report exists
-- JSON report can be read
-- report contains expected diagnostic sections
 
 ---
 
@@ -163,16 +147,3 @@ Pipeline tests should focus on:
 - report export integration
 
 Avoid duplicating every module-level test here.
-
----
-
-## Future Improvements
-
-Possible future additions:
-
-- optional constraints tests
-- invalid input file tests
-- malformed CSV tests
-- strict/tolerant mode tests
-- report metadata tests
-- auto-generated report path tests
