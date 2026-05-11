@@ -24,7 +24,7 @@ CSV Input
 
 ---
 
-# Tested File
+## Tested File
 
 ```text
 data_processor/core/pipeline.py
@@ -32,9 +32,9 @@ data_processor/core/pipeline.py
 
 ---
 
-# Current Test Coverage
+## Current Test Coverage
 
-## `test_run_csv_pipeline_creates_output_file`
+### `test_run_csv_pipeline_creates_output_file`
 
 Verifies:
 
@@ -46,7 +46,7 @@ Verifies:
 
 ---
 
-## `test_run_csv_pipeline_quality_report`
+### `test_run_csv_pipeline_quality_report`
 
 Verifies the pipeline returns correct quality report values.
 
@@ -59,26 +59,36 @@ Checks:
 
 ---
 
-## `test_run_csv_pipeline_exports_cleaned_values`
+### `test_run_csv_pipeline_exports_cleaned_values`
 
 Verifies cleaned values are written to the output file.
 
 Examples:
 
 ```text
-" Alice "
-→ "Alice"
-
-"YES"
-→ "true"
-
-"25.50"
-→ "25.5"
+" Alice " → "Alice"
+"YES" → "true"
+"25.50" → "25.5"
 ```
 
 ---
 
-## `test_run_csv_pipeline_returns_diagnostic_bundle`
+### `test_run_csv_pipeline_converts_whitespace_only_cells_to_null`
+
+Verifies whitespace-only CSV cells become `None` during normal pipeline execution.
+
+Examples:
+
+```text
+"   " → None
+"\t" → None
+```
+
+This protects the expected interaction between CSV parsing, null cleaning, and text cleaning.
+
+---
+
+### `test_run_csv_pipeline_returns_diagnostic_bundle`
 
 Verifies the pipeline returns a diagnostic bundle.
 
@@ -94,7 +104,7 @@ Checks:
 
 ---
 
-## `test_run_csv_pipeline_exports_diagnostic_report`
+### `test_run_csv_pipeline_exports_diagnostic_report`
 
 Verifies the pipeline exports a JSON diagnostic report when `report_path` is provided.
 
@@ -107,7 +117,7 @@ Checks:
 
 ---
 
-# Important Design Rule
+## Important Design Rule
 
 Pipeline tests verify orchestration.
 
@@ -117,59 +127,32 @@ Individual modules already have their own dedicated tests.
 
 ---
 
-# Run Tests
+## Run Tests
 
-```powershell
-pytest tests\test_pipeline.py
+```bash
+python -m pytest tests/test_pipeline.py
 ```
 
 Expected result:
 
 ```text
-5 passed
+all tests pass
 ```
 
 ---
 
-# Recommended Validation Workflow
+## Recommended Validation Workflow
 
-```powershell
-ruff check `
-    data_processor\core\pipeline.py `
-    scripts\run_csv_pipeline.py `
-    tests\test_pipeline.py
-
-black `
-    data_processor\core\pipeline.py `
-    scripts\run_csv_pipeline.py `
-    tests\test_pipeline.py
-
-pytest tests\test_pipeline.py
-pytest
+```bash
+ruff check data_processor/core/pipeline.py scripts/run_csv_pipeline.py tests/test_pipeline.py
+black data_processor/core/pipeline.py scripts/run_csv_pipeline.py tests/test_pipeline.py
+python -m pytest tests/test_pipeline.py
+python -m pytest
 ```
 
 ---
 
-# Manual CLI Test
-
-```powershell
-python scripts\run_csv_pipeline.py `
-    examples\sample_dirty.csv `
-    data\processed\sample_clean.csv `
-    --report-path data\processed\sample_clean_report.json
-```
-
-Then inspect:
-
-```powershell
-Get-Content data\processed\sample_clean.csv
-
-Get-Content data\processed\sample_clean_report.json
-```
-
----
-
-# Developer Notes
+## Developer Notes
 
 Pipeline tests should focus on:
 
@@ -183,7 +166,7 @@ Avoid duplicating every module-level test here.
 
 ---
 
-# Future Improvements
+## Future Improvements
 
 Possible future additions:
 
