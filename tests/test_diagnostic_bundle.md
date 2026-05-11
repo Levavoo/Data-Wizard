@@ -4,7 +4,7 @@
 
 Tests the diagnostic bundle module.
 
-This verifies that quality reports, profiles, parser diagnostics, type diagnostics, and validation reports are combined into one structured report.
+This verifies that quality reports, profiles, parser diagnostics, row classification, type diagnostics, and validation reports are combined into one structured report.
 
 Architecture:
 
@@ -36,6 +36,7 @@ Verifies the bundle contains:
 - quality report
 - column profiles
 - row profiles
+- row classification
 - type diagnostics
 - validation report
 
@@ -59,22 +60,31 @@ Verifies row profiles are included.
 
 ---
 
-### `test_build_diagnostic_bundle_type_diagnostics`
+### `test_build_diagnostic_bundle_row_classification`
 
-Verifies mixed-type diagnostics are included in the bundle.
+Verifies suspicious row classification is included in the bundle.
 
 Example:
 
 ```text
-amount values: 100, 250.75, unknown, 300, 400
+1,100
+TOTAL,100
+End of export,
 ```
 
-Expected:
+Expected summary:
 
 ```text
-dominant_type = float
-invalid value = row 2, unknown
+normal_row: 1
+summary_row: 1
+footer_row: 1
 ```
+
+---
+
+### `test_build_diagnostic_bundle_type_diagnostics`
+
+Verifies mixed-type diagnostics are included in the bundle.
 
 ---
 
@@ -105,6 +115,7 @@ They must never:
 - clean data
 - cast values
 - modify tables
+- remove rows
 - export files
 - validate constraints directly
 
