@@ -42,6 +42,27 @@ def test_normalize_na_values() -> None:
     assert normalize_null(" nan ") is None
 
 
+def test_normalize_extended_null_tokens() -> None:
+    """
+    Verify conservative extended null tokens become None.
+    """
+    assert normalize_null("#N/A") is None
+    assert normalize_null(" NIL ") is None
+    assert normalize_null("--") is None
+    assert normalize_null("?") is None
+    assert normalize_null("not available") is None
+    assert normalize_null("NOT AVAILABLE") is None
+    assert normalize_null("not_applicable") is None
+
+
+def test_preserve_ambiguous_null_like_values() -> None:
+    """
+    Verify ambiguous tokens remain normal values by default.
+    """
+    assert normalize_null("unknown") == "unknown"
+    assert normalize_null("missing") == "missing"
+
+
 def test_preserve_regular_values() -> None:
     """
     Verify normal values remain unchanged.
@@ -119,6 +140,41 @@ def test_clean_table_nulls_handles_whitespace_only_cells() -> None:
     clean_table_nulls(table)
 
     assert table.rows == [
+        {"email": None},
+        {"email": None},
+        {"email": None},
+    ]
+
+
+def test_clean_table_nulls_handles_extended_tokens() -> None:
+    """
+    Verify table-wide null cleaning handles extended null tokens.
+    """
+    schema = Schema(
+        columns=[
+            Column(name="email"),
+        ]
+    )
+
+    table = Table(
+        name="customers",
+        schema=schema,
+        rows=[
+            {"email": "#N/A"},
+            {"email": "NIL"},
+            {"email": "--"},
+            {"email": "?"},
+            {"email": "not available"},
+            {"email": "not_applicable"},
+        ],
+    )
+
+    clean_table_nulls(table)
+
+    assert table.rows == [
+        {"email": None},
+        {"email": None},
+        {"email": None},
         {"email": None},
         {"email": None},
         {"email": None},
