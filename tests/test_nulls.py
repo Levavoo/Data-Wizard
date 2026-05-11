@@ -14,6 +14,16 @@ def test_normalize_empty_string() -> None:
     assert normalize_null("") is None
 
 
+def test_normalize_whitespace_only_strings() -> None:
+    """
+    Verify whitespace-only strings become None.
+    """
+    assert normalize_null("   ") is None
+    assert normalize_null("\t") is None
+    assert normalize_null("\n") is None
+    assert normalize_null(" \t \n ") is None
+
+
 def test_normalize_null_string() -> None:
     """
     Verify textual null values become None.
@@ -84,3 +94,32 @@ def test_clean_table_nulls() -> None:
 
     assert table.rows[1]["country"] == "Germany"
     assert table.rows[1]["email"] == "bob@example.com"
+
+
+def test_clean_table_nulls_handles_whitespace_only_cells() -> None:
+    """
+    Verify table-wide null cleaning handles whitespace-only strings.
+    """
+    schema = Schema(
+        columns=[
+            Column(name="email"),
+        ]
+    )
+
+    table = Table(
+        name="customers",
+        schema=schema,
+        rows=[
+            {"email": "   "},
+            {"email": "\t"},
+            {"email": " \n "},
+        ],
+    )
+
+    clean_table_nulls(table)
+
+    assert table.rows == [
+        {"email": None},
+        {"email": None},
+        {"email": None},
+    ]
