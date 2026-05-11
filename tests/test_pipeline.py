@@ -80,6 +80,45 @@ def test_run_csv_pipeline_exports_cleaned_values(tmp_path: Path) -> None:
     assert "Bob,false,25.5" in content
 
 
+def test_run_csv_pipeline_exports_european_decimal_values(tmp_path: Path) -> None:
+    """
+    Verify European decimal values are inferred, cast, and exported correctly.
+    """
+    input_path = tmp_path / "european_decimals.csv"
+    output_path = tmp_path / "output.csv"
+
+    input_path.write_text(
+        "Customer ID,Amount\n"
+        '1,"1.000,50"\n'
+        '2,"250,75"\n'
+        '3,"5.500,00"\n',
+        encoding="utf-8",
+    )
+
+    result = run_csv_pipeline(
+        input_path=input_path,
+        output_path=output_path,
+    )
+
+    table = result["table"]
+    amount_column = table.schema.get_column("amount")
+
+    assert amount_column is not None
+    assert amount_column.inferred_type == "float"
+
+    assert table.rows == [
+        {"customer_id": 1, "amount": 1000.5},
+        {"customer_id": 2, "amount": 250.75},
+        {"customer_id": 3, "amount": 5500.0},
+    ]
+
+    content = output_path.read_text(encoding="utf-8")
+
+    assert "1,1000.5" in content
+    assert "2,250.75" in content
+    assert "3,5500.0" in content
+
+
 def test_run_csv_pipeline_converts_whitespace_only_cells_to_null(
     tmp_path: Path,
 ) -> None:
