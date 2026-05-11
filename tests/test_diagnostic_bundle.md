@@ -4,7 +4,7 @@
 
 Tests the diagnostic bundle module.
 
-This verifies that quality reports, column profiles, row profiles, and validation reports are combined into one structured report.
+This verifies that quality reports, profiles, parser diagnostics, type diagnostics, and validation reports are combined into one structured report.
 
 Architecture:
 
@@ -16,7 +16,7 @@ Table + Validation Results
 
 ---
 
-# Tested File
+## Tested File
 
 ```text
 data_processor/reports/diagnostic_bundle.py
@@ -24,9 +24,9 @@ data_processor/reports/diagnostic_bundle.py
 
 ---
 
-# Current Test Coverage
+## Current Test Coverage
 
-## `test_build_diagnostic_bundle_contains_top_level_fields`
+### `test_build_diagnostic_bundle_contains_top_level_fields`
 
 Verifies the bundle contains:
 
@@ -36,52 +36,67 @@ Verifies the bundle contains:
 - quality report
 - column profiles
 - row profiles
+- type diagnostics
 - validation report
 
 ---
 
-## `test_build_diagnostic_bundle_quality_report`
+### `test_build_diagnostic_bundle_quality_report`
 
 Verifies the quality report section is included and correctly generated.
 
 ---
 
-## `test_build_diagnostic_bundle_column_profiles`
+### `test_build_diagnostic_bundle_column_profiles`
 
 Verifies column profiles are included.
 
-Checks:
-
-- expected column keys
-- missing count values
-
 ---
 
-## `test_build_diagnostic_bundle_row_profiles`
+### `test_build_diagnostic_bundle_row_profiles`
 
 Verifies row profiles are included.
 
-Checks:
+---
 
-- row profile count
-- missing values
-- duplicate candidate detection
+### `test_build_diagnostic_bundle_type_diagnostics`
+
+Verifies mixed-type diagnostics are included in the bundle.
+
+Example:
+
+```text
+amount values: 100, 250.75, unknown, 300, 400
+```
+
+Expected:
+
+```text
+dominant_type = float
+invalid value = row 2, unknown
+```
 
 ---
 
-## `test_build_diagnostic_bundle_validation_report`
+### `test_build_diagnostic_bundle_validation_report`
 
 Verifies validation results are summarized into the bundle.
 
 ---
 
-## `test_build_diagnostic_bundle_empty_validation_report`
+### `test_build_diagnostic_bundle_empty_validation_report`
 
 Verifies the validation report section exists even when no validation results are provided.
 
 ---
 
-# Important Design Rule
+### `test_build_diagnostic_bundle_includes_table_metadata`
+
+Verifies table metadata is included in the diagnostic bundle.
+
+---
+
+## Important Design Rule
 
 Diagnostic bundles aggregate reports only.
 
@@ -95,57 +110,14 @@ They must never:
 
 ---
 
-# Run Tests
+## Run Tests
 
-```powershell
-pytest tests\test_diagnostic_bundle.py
-```
-
-Expected:
-
-```text
-6 passed
+```bash
+python -m pytest tests/test_diagnostic_bundle.py
 ```
 
 ---
 
-# Recommended Validation Workflow
+## Developer Notes
 
-```powershell
-ruff check `
-    data_processor\reports\diagnostic_bundle.py `
-    tests\test_diagnostic_bundle.py
-
-black `
-    data_processor\reports\diagnostic_bundle.py `
-    tests\test_diagnostic_bundle.py
-
-pytest tests\test_diagnostic_bundle.py
-pytest
-```
-
----
-
-# Developer Notes
-
-The diagnostic bundle will later be exported as JSON beside every cleaned dataset.
-
-This becomes the central report object for:
-
-- CLI summaries
-- audit reports
-- future UI dashboards
-- migration diagnostics
-- quarantine workflows
-
-## `test_build_diagnostic_bundle_includes_table_metadata`
-
-Verifies table metadata is included in the diagnostic bundle.
-
-Useful for CSV diagnostics such as:
-
-```text
-source_format
-encoding
-delimiter
-```
+The diagnostic bundle is the central report object for CLI summaries, audit reports, future UI dashboards, migration diagnostics, and quarantine workflows.
