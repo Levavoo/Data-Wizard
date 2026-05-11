@@ -157,6 +157,36 @@ def test_run_csv_pipeline_reports_mixed_type_diagnostics(tmp_path: Path) -> None
     ]
 
 
+def test_run_csv_pipeline_reports_suspicious_rows(tmp_path: Path) -> None:
+    """
+    Verify suspicious rows are reported without removing rows.
+    """
+    input_path = tmp_path / "footer_summary_rows.csv"
+    output_path = tmp_path / "output.csv"
+
+    input_path.write_text(
+        "Order ID,Amount\n"
+        "1,100\n"
+        "2,250\n"
+        "TOTAL,350\n"
+        "End of export,\n",
+        encoding="utf-8",
+    )
+
+    result = run_csv_pipeline(
+        input_path=input_path,
+        output_path=output_path,
+    )
+
+    table = result["table"]
+    row_classification = result["diagnostic_bundle"]["row_classification"]
+
+    assert table.row_count() == 4
+    assert len(row_classification["suspicious_rows"]) == 2
+    assert row_classification["summary"]["summary_row"] == 1
+    assert row_classification["summary"]["footer_row"] == 1
+
+
 def test_run_csv_pipeline_converts_whitespace_only_cells_to_null(
     tmp_path: Path,
 ) -> None:
@@ -210,6 +240,7 @@ def test_run_csv_pipeline_returns_diagnostic_bundle(tmp_path: Path) -> None:
     assert "quality_report" in diagnostic_bundle
     assert "column_profiles" in diagnostic_bundle
     assert "row_profiles" in diagnostic_bundle
+    assert "row_classification" in diagnostic_bundle
     assert "type_diagnostics" in diagnostic_bundle
     assert "validation_report" in diagnostic_bundle
 
@@ -243,5 +274,6 @@ def test_run_csv_pipeline_exports_diagnostic_report(tmp_path: Path) -> None:
     assert "quality_report" in report
     assert "column_profiles" in report
     assert "row_profiles" in report
+    assert "row_classification" in report
     assert "type_diagnostics" in report
     assert "validation_report" in report
