@@ -58,6 +58,7 @@ def test_build_diagnostic_bundle_contains_top_level_fields() -> None:
     assert "row_classification" in bundle
     assert "type_diagnostics" in bundle
     assert "validation_report" in bundle
+    assert "quarantine_candidates" in bundle
 
 
 def test_build_diagnostic_bundle_quality_report() -> None:
@@ -202,6 +203,51 @@ def test_build_diagnostic_bundle_validation_report() -> None:
     assert validation_report["failed_count"] == 1
     assert validation_report["has_failures"] is True
     assert validation_report["failures_by_column"]["name"] == 1
+
+
+def test_build_diagnostic_bundle_quarantine_candidates() -> None:
+    """
+    Verify quarantine candidates are included and group candidate reasons.
+    """
+    schema = Schema(
+        columns=[
+            Column(name="email"),
+            Column(name="amount"),
+        ]
+    )
+
+    table = Table(
+        name="orders",
+        schema=schema,
+        rows=[
+            {"email": "alice@example.com", "amount": "100"},
+            {"email": "invalid-email", "amount": "unknown"},
+        ],
+    )
+
+    validation_results = [
+        ValidationResult(
+            column_name="email",
+            constraint_type="regex_pattern",
+            passed=False,
+            message="Value does not match pattern.",
+            row_index=1,
+            value="invalid-email",
+        )
+    ]
+
+    bundle = build_diagnostic_bundle(
+        table=table,
+        validation_results=validation_results,
+    )
+
+    quarantine_candidates = bundle["quarantine_candidates"]
+
+    assert quarantine_candidates["candidate_count"] == 1
+    assert quarantine_candidates["summary"]["error"] == 1
+    assert quarantine_candidates["candidates"][0]["row_index"] == 1
+    assert quarantine_candidates["candidates"][0]["severity"] == "error"
+    assert quarantine_candidates["candidates"][0]["reason_count"] >= 1
 
 
 def test_build_diagnostic_bundle_empty_validation_report() -> None:
