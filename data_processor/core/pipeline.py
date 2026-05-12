@@ -8,6 +8,7 @@ Purpose:
 - run the CSV cleaning workflow
 - keep processing steps ordered
 - avoid putting cleaning logic directly into the pipeline
+- optionally validate constraints
 - optionally export diagnostic reports
 """
 
@@ -23,6 +24,8 @@ from data_processor.exporters.json_report_exporter import export_report_to_json
 from data_processor.inference.schema_inference import infer_schema_metadata
 from data_processor.inference.type_inference import infer_table_types
 from data_processor.reports.diagnostic_bundle import build_diagnostic_bundle
+from data_processor.validators.constraints import Constraint
+from data_processor.validators.constraints import validate_table_constraints
 from data_processor.validators.quality_report import generate_quality_report
 
 
@@ -30,6 +33,7 @@ def run_csv_pipeline(
     input_path: str | Path,
     output_path: str | Path,
     report_path: str | Path | None = None,
+    constraints: list[Constraint] | None = None,
 ) -> dict[str, Any]:
     """
     Run the full CSV cleaning pipeline.
@@ -44,10 +48,16 @@ def run_csv_pipeline(
         report_path:
             Optional target JSON diagnostic report path.
 
+        constraints:
+            Optional validation constraints to apply after cleaning and casting.
+
     Returns:
         Dictionary containing the final table, quality report,
-        and diagnostic bundle.
+        diagnostic bundle, and validation results.
     """
+    if constraints is None:
+        constraints = []
+
     adapter = CsvAdapter(input_path)
     table = adapter.read()
 
@@ -60,9 +70,17 @@ def run_csv_pipeline(
     infer_table_types(table)
     infer_schema_metadata(table)
 
+    validation_results = validate_table_constraints(
+        table=table,
+        constraints=constraints,
+    )
+
     quality_report = generate_quality_report(table)
 
-    diagnostic_bundle = build_diagnostic_bundle(table)
+    diagnostic_bundle = build_diagnostic_bundle(
+        table=table,
+        validation_results=validation_results,
+    )
 
     export_table_to_csv(
         table=table,
@@ -78,5 +96,6 @@ def run_csv_pipeline(
     return {
         "table": table,
         "quality_report": quality_report,
+        "validation_results": validation_results,
         "diagnostic_bundle": diagnostic_bundle,
     }
