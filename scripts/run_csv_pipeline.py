@@ -8,9 +8,13 @@ Example:
 
 With report:
     python scripts/run_csv_pipeline.py data/raw/input.csv data/processed/output.csv --report-path data/processed/report.json
+
+With constraints:
+    python scripts/run_csv_pipeline.py data/raw/input.csv data/processed/output.csv --constraints-path data/raw/constraints.json
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from pprint import pprint
@@ -22,6 +26,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 from data_processor.core.pipeline import run_csv_pipeline
+from data_processor.validators.constraint_config import load_constraints_from_config
+from data_processor.validators.constraints import Constraint
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -52,7 +58,34 @@ def parse_arguments() -> argparse.Namespace:
         help="Optional path where the diagnostic JSON report should be written.",
     )
 
+    parser.add_argument(
+        "--constraints-path",
+        type=Path,
+        default=None,
+        help="Optional JSON file containing validation constraints.",
+    )
+
     return parser.parse_args()
+
+
+def load_constraints_from_path(path: Path | None) -> list[Constraint]:
+    """
+    Load validation constraints from a JSON file.
+
+    Args:
+        path:
+            Optional constraints JSON path.
+
+    Returns:
+        List of Constraint objects.
+    """
+    if path is None:
+        return []
+
+    with path.open(mode="r", encoding="utf-8") as constraints_file:
+        config = json.load(constraints_file)
+
+    return load_constraints_from_config(config)
 
 
 def main() -> None:
@@ -60,11 +93,13 @@ def main() -> None:
     Run the CSV pipeline from command-line arguments.
     """
     args = parse_arguments()
+    constraints = load_constraints_from_path(args.constraints_path)
 
     result = run_csv_pipeline(
         input_path=args.input_path,
         output_path=args.output_path,
         report_path=args.report_path,
+        constraints=constraints,
     )
 
     print("CSV pipeline completed.")
@@ -75,9 +110,16 @@ def main() -> None:
     if args.report_path is not None:
         print(f"Diagnostic report: {args.report_path}")
 
+    if args.constraints_path is not None:
+        print(f"Constraints file: {args.constraints_path}")
+
     print()
     print("Quality report:")
     pprint(result["quality_report"])
+
+    print()
+    print("Validation report:")
+    pprint(result["diagnostic_bundle"]["validation_report"])
 
 
 if __name__ == "__main__":
