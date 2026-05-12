@@ -40,16 +40,22 @@ def test_example_customer_migration_workflow(tmp_path: Path) -> None:
     assert "row_classification" in diagnostic_bundle
     assert "type_diagnostics" in diagnostic_bundle
     assert "validation_report" in diagnostic_bundle
+    assert "quarantine_candidates" in diagnostic_bundle
 
     validation_report = diagnostic_bundle["validation_report"]
     row_classification = diagnostic_bundle["row_classification"]
+    quarantine_candidates = diagnostic_bundle["quarantine_candidates"]
 
     assert validation_report["has_failures"] is True
     assert validation_report["failed_count"] > 0
     assert len(row_classification["suspicious_rows"]) >= 2
+    assert quarantine_candidates["candidate_count"] > 0
+    assert quarantine_candidates["summary"]["error"] > 0
+    assert quarantine_candidates["summary"]["warning"] > 0
 
     exported_report = json.loads(report_path.read_text(encoding="utf-8"))
 
     assert exported_report["table_name"] == "customer_migration_sample"
     assert "validation_report" in exported_report
     assert "row_classification" in exported_report
+    assert "quarantine_candidates" in exported_report
