@@ -16,6 +16,7 @@ CSV Input
 → Type Inference
 → Type-Aware Casting
 → Schema Metadata
+→ Optional Constraint Validation
 → Quality Report
 → Diagnostic Bundle
 → CSV Exporter
@@ -37,6 +38,8 @@ data_processor/core/pipeline.py
 ### `test_run_csv_pipeline_creates_output_file`
 
 Verifies pipeline execution and output file creation.
+
+Also verifies the result contains `validation_results`.
 
 ---
 
@@ -68,23 +71,28 @@ Verifies mostly numeric mixed-type columns are reported in the diagnostic bundle
 
 Verifies suspicious rows are reported in the diagnostic bundle without removing rows.
 
-Example input:
+---
+
+### `test_run_csv_pipeline_validates_constraints`
+
+Verifies optional constraints are applied after cleaning and casting.
+
+Covered constraints:
 
 ```text
-1,100
-2,250
-TOTAL,350
-End of export,
+unique
+allowed_values
+regex_pattern
+min_value
 ```
 
-Expected classification summary:
+Expected behavior:
 
 ```text
-summary_row: 1
-footer_row: 1
+validation failures appear in diagnostic_bundle["validation_report"]
+validation_results are returned by run_csv_pipeline()
+cleaned table and CSV export remain available
 ```
-
-The table row count remains unchanged.
 
 ---
 
