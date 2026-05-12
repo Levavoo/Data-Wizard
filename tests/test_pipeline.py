@@ -238,6 +238,51 @@ def test_run_csv_pipeline_validates_constraints(tmp_path: Path) -> None:
     assert result["validation_results"]
 
 
+def test_run_csv_pipeline_reports_quarantine_candidates(tmp_path: Path) -> None:
+    """
+    Verify quarantine candidates are reported without removing rows.
+    """
+    input_path = tmp_path / "customers.csv"
+    output_path = tmp_path / "output.csv"
+
+    input_path.write_text(
+        "Customer ID,Country,Email,Amount\n"
+        "1,Germany,alice@example.com,100\n"
+        "2,Mars,invalid-email,-5\n"
+        "TOTAL,,,\n",
+        encoding="utf-8",
+    )
+
+    constraints = [
+        Constraint(
+            column_name="country",
+            constraint_type="allowed_values",
+            value=["Germany", "France"],
+        ),
+        Constraint(
+            column_name="email",
+            constraint_type="regex_pattern",
+            value=r"^[^@]+@[^@]+\.[^@]+$",
+        ),
+        Constraint(column_name="amount", constraint_type="min_value", value=0),
+    ]
+
+    result = run_csv_pipeline(
+        input_path=input_path,
+        output_path=output_path,
+        constraints=constraints,
+    )
+
+    table = result["table"]
+    quarantine_candidates = result["diagnostic_bundle"]["quarantine_candidates"]
+
+    assert table.row_count() == 3
+    assert quarantine_candidates["candidate_count"] >= 2
+    assert quarantine_candidates["summary"]["error"] >= 1
+    assert quarantine_candidates["summary"]["warning"] >= 1
+    assert output_path.exists()
+
+
 def test_run_csv_pipeline_converts_whitespace_only_cells_to_null(
     tmp_path: Path,
 ) -> None:
@@ -294,6 +339,7 @@ def test_run_csv_pipeline_returns_diagnostic_bundle(tmp_path: Path) -> None:
     assert "row_classification" in diagnostic_bundle
     assert "type_diagnostics" in diagnostic_bundle
     assert "validation_report" in diagnostic_bundle
+    assert "quarantine_candidates" in diagnostic_bundle
 
 
 def test_run_csv_pipeline_exports_diagnostic_report(tmp_path: Path) -> None:
@@ -328,3 +374,4 @@ def test_run_csv_pipeline_exports_diagnostic_report(tmp_path: Path) -> None:
     assert "row_classification" in report
     assert "type_diagnostics" in report
     assert "validation_report" in report
+    assert "quarantine_candidates" in report
