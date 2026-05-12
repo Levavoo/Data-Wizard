@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from data_processor.core.pipeline import run_csv_pipeline
+from data_processor.validators.constraints import Constraint
 
 
 def test_run_csv_pipeline_creates_output_file(tmp_path: Path) -> None:
@@ -26,6 +27,7 @@ def test_run_csv_pipeline_creates_output_file(tmp_path: Path) -> None:
     assert output_path.exists()
     assert "table" in result
     assert "quality_report" in result
+    assert "validation_results" in result
     assert "diagnostic_bundle" in result
 
 
@@ -185,6 +187,55 @@ def test_run_csv_pipeline_reports_suspicious_rows(tmp_path: Path) -> None:
     assert len(row_classification["suspicious_rows"]) == 2
     assert row_classification["summary"]["summary_row"] == 1
     assert row_classification["summary"]["footer_row"] == 1
+
+
+def test_run_csv_pipeline_validates_constraints(tmp_path: Path) -> None:
+    """
+    Verify optional constraints are validated after cleaning and casting.
+    """
+    input_path = tmp_path / "customers.csv"
+    output_path = tmp_path / "output.csv"
+
+    input_path.write_text(
+        "Customer ID,Country,Email,Amount\n"
+        "1,Germany,alice@example.com,100\n"
+        "1,Mars,invalid-email,-5\n"
+        "3,France,bob@example.com,250\n",
+        encoding="utf-8",
+    )
+
+    constraints = [
+        Constraint(column_name="customer_id", constraint_type="unique"),
+        Constraint(
+            column_name="country",
+            constraint_type="allowed_values",
+            value=["Germany", "France"],
+        ),
+        Constraint(
+            column_name="email",
+            constraint_type="regex_pattern",
+            value=r"^[^@]+@[^@]+\.[^@]+$",
+        ),
+        Constraint(column_name="amount", constraint_type="min_value", value=0),
+    ]
+
+    result = run_csv_pipeline(
+        input_path=input_path,
+        output_path=output_path,
+        constraints=constraints,
+    )
+
+    validation_report = result["diagnostic_bundle"]["validation_report"]
+
+    assert validation_report["failed_count"] == 4
+    assert validation_report["has_failures"] is True
+    assert validation_report["failures_by_column"] == {
+        "customer_id": 1,
+        "country": 1,
+        "email": 1,
+        "amount": 1,
+    }
+    assert result["validation_results"]
 
 
 def test_run_csv_pipeline_converts_whitespace_only_cells_to_null(
