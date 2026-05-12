@@ -18,16 +18,18 @@ PowerShell Command
 
 ---
 
-# Main Responsibilities
+## Main Responsibilities
 
 This script handles:
 
 - reading command-line arguments
+- loading optional constraint JSON files
 - calling the CSV pipeline
 - printing the input path
 - printing the output path
 - printing the diagnostic report path if provided
 - printing the quality report summary
+- printing the validation report summary
 
 It does not handle:
 
@@ -41,9 +43,9 @@ Those responsibilities belong to the core project modules.
 
 ---
 
-# Main Functions
+## Main Functions
 
-## `parse_arguments()`
+### `parse_arguments()`
 
 Reads command-line arguments.
 
@@ -58,11 +60,18 @@ Optional arguments:
 
 ```text
 --report-path
+--constraints-path
 ```
 
 ---
 
-## `main()`
+### `load_constraints_from_path(path)`
+
+Loads an optional JSON constraint file and converts it into `Constraint` objects.
+
+---
+
+### `main()`
 
 Main script entry point.
 
@@ -70,16 +79,16 @@ Flow:
 
 ```text
 parse arguments
+→ load optional constraints
 → run pipeline
 → print summary
 → print quality report
+→ print validation report
 ```
 
 ---
 
-# Example Usage Without Report Export
-
-From the project root:
+## Example Usage Without Report Export
 
 ```powershell
 python scripts\run_csv_pipeline.py `
@@ -89,7 +98,7 @@ python scripts\run_csv_pipeline.py `
 
 ---
 
-# Example Usage With Report Export
+## Example Usage With Report Export
 
 ```powershell
 python scripts\run_csv_pipeline.py `
@@ -100,7 +109,46 @@ python scripts\run_csv_pipeline.py `
 
 ---
 
-# Expected Output
+## Example Usage With Constraints
+
+```powershell
+python scripts\run_csv_pipeline.py `
+    data\raw\customers.csv `
+    data\processed\customers_clean.csv `
+    --constraints-path data\raw\customer_constraints.json `
+    --report-path data\processed\customers_report.json
+```
+
+---
+
+## Constraint File Example
+
+```json
+[
+    {
+        "column": "customer_id",
+        "type": "required"
+    },
+    {
+        "column": "customer_id",
+        "type": "unique"
+    },
+    {
+        "column": "country",
+        "type": "allowed_values",
+        "values": ["Germany", "France", "Spain"]
+    },
+    {
+        "column": "email",
+        "type": "regex",
+        "pattern": "^[^@]+@[^@]+\\.[^@]+$"
+    }
+]
+```
+
+---
+
+## Expected Output
 
 Example terminal output:
 
@@ -110,19 +158,18 @@ CSV pipeline completed.
 Input file: data\raw\customers.csv
 Output file: data\processed\customers_clean.csv
 Diagnostic report: data\processed\customers_report.json
+Constraints file: data\raw\customer_constraints.json
 
 Quality report:
-{
-    "table_name": "customers",
-    "row_count": 100,
-    "column_count": 5,
-    ...
-}
+...
+
+Validation report:
+...
 ```
 
 ---
 
-# Import Path Handling
+## Import Path Handling
 
 This script adds the project root to `sys.path`.
 
@@ -136,18 +183,9 @@ The project package lives here:
 data_processor/
 ```
 
-So this block makes imports reliable:
-
-```python
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-```
-
 ---
 
-# Important Design Rule
+## Important Design Rule
 
 CLI scripts should be thin.
 
@@ -155,6 +193,7 @@ They should only:
 
 ```text
 receive input
+load simple config files
 call project modules
 show output
 ```
@@ -163,15 +202,12 @@ They should not contain business logic.
 
 ---
 
-# Project Position
-
-This script makes the project usable as a local command-line tool.
-
-Current workflow:
+## Current Workflow
 
 ```text
 CSV File
 → CLI Runner
+→ Optional Constraint Config Loader
 → Pipeline
 → Cleaned CSV
 → Optional Diagnostic JSON Report
@@ -179,40 +215,28 @@ CSV File
 
 ---
 
-# Validation Command
-
-Run formatting and linting:
+## Validation Command
 
 ```powershell
 ruff check scripts\run_csv_pipeline.py
-
 black scripts\run_csv_pipeline.py
 ```
 
 ---
 
-# Manual Test Command
-
-Use an existing sample file:
+## Manual Test Command
 
 ```powershell
 python scripts\run_csv_pipeline.py `
-    examples\sample_dirty.csv `
-    data\processed\sample_clean.csv `
-    --report-path data\processed\sample_clean_report.json
-```
-
-Then check:
-
-```powershell
-Get-Content data\processed\sample_clean.csv
-
-Get-Content data\processed\sample_clean_report.json
+    data\raw\customers.csv `
+    data\processed\customers_clean.csv `
+    --constraints-path data\raw\customer_constraints.json `
+    --report-path data\processed\customers_report.json
 ```
 
 ---
 
-# Developer Notes
+## Developer Notes
 
 This script intentionally uses:
 
@@ -226,7 +250,7 @@ No external CLI framework is needed yet.
 
 ---
 
-# Future Improvements
+## Future Improvements
 
 Possible future additions:
 
@@ -234,7 +258,6 @@ Possible future additions:
 - dry-run mode
 - strict/tolerant mode
 - selectable cleaning profile
-- constraint file input
 - batch folder processing
 - logging
 - exit codes
