@@ -1,0 +1,9 @@
+{
+  "input_path": "tests/fixtures/csv/semicolon_customers.csv",
+  "output_path": "data/processed/semicolon_customers_clean.csv",
+  "profile": "light_touch",
+  "report_path": "data/processed/semicolon_customers_report.json",
+  "html_report_path": "data/processed/semicolon_customers_report.html",
+  "delimiter": ";",
+  "auto_detect_csv": true
+}
