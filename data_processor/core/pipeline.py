@@ -12,6 +12,7 @@ Purpose:
 - optionally build strict-mode status
 - optionally export diagnostic reports
 - optionally export quarantine review files
+- optionally pass CSV detection settings to the adapter
 """
 
 from pathlib import Path
@@ -49,6 +50,9 @@ def run_csv_pipeline(
     accepted_rows_path: str | Path | None = None,
     constraints: list[Constraint] | None = None,
     strict_mode: bool = False,
+    encoding: str | None = None,
+    delimiter: str | None = None,
+    auto_detect_csv: bool = True,
 ) -> dict[str, Any]:
     """
     Run the full CSV cleaning pipeline.
@@ -81,6 +85,15 @@ def run_csv_pipeline(
         strict_mode:
             Whether policy failures should be marked as strict-mode failures.
 
+        encoding:
+            Optional explicit CSV text encoding.
+
+        delimiter:
+            Optional explicit CSV delimiter.
+
+        auto_detect_csv:
+            Whether missing CSV encoding/delimiter settings should be detected.
+
     Returns:
         Dictionary containing the final table, quality report,
         validation results, diagnostic bundle, and pipeline status.
@@ -88,7 +101,12 @@ def run_csv_pipeline(
     if constraints is None:
         constraints = []
 
-    adapter = CsvAdapter(input_path)
+    adapter = CsvAdapter(
+        input_path,
+        encoding=encoding,
+        delimiter=delimiter,
+        auto_detect=auto_detect_csv,
+    )
     table = adapter.read()
 
     clean_table_nulls(table)
