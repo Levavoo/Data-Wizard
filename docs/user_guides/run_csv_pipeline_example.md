@@ -51,7 +51,7 @@ The `data/processed/` folder is ignored by Git except for `.gitkeep`.
 
 ---
 
-## Run With Reports and Quarantine Exports
+## Run With a Profile
 
 PowerShell:
 
@@ -59,6 +59,28 @@ PowerShell:
 python scripts\run_csv_pipeline.py `
     examples\csv\customer_migration_sample.csv `
     data\processed\customer_migration_clean.csv `
+    --profile migration_audit
+```
+
+Profiles select reusable workflow defaults.
+
+Important:
+
+```text
+profiles do not generate output paths automatically yet
+```
+
+---
+
+## Run With Profile, Reports, and Quarantine Exports
+
+PowerShell:
+
+```powershell
+python scripts\run_csv_pipeline.py `
+    examples\csv\customer_migration_sample.csv `
+    data\processed\customer_migration_clean.csv `
+    --profile migration_audit `
     --constraints-path examples\csv\customer_constraints.json `
     --report-path data\processed\customer_migration_report.json `
     --html-report-path data\processed\customer_migration_report.html `
@@ -88,11 +110,11 @@ quarantine rows CSV export
 accepted rows CSV export
 ```
 
-Because this is non-strict mode, the command exits with code `0` when execution succeeds, even if diagnostics report issues.
+Because `migration_audit` is non-strict, the command exits with code `0` when execution succeeds, even if diagnostics report issues.
 
 ---
 
-## Run With Strict Mode
+## Run With Strict Profile
 
 PowerShell:
 
@@ -100,16 +122,16 @@ PowerShell:
 python scripts\run_csv_pipeline.py `
     examples\csv\customer_migration_sample.csv `
     data\processed\customer_migration_clean.csv `
+    --profile strict_crm `
     --constraints-path examples\csv\customer_constraints.json `
     --report-path data\processed\customer_migration_report.json `
     --html-report-path data\processed\customer_migration_report.html `
     --quarantine-candidates-path data\processed\quarantine_candidates.json `
     --quarantine-rows-path data\processed\quarantine_rows.csv `
-    --accepted-rows-path data\processed\accepted_rows.csv `
-    --strict
+    --accepted-rows-path data\processed\accepted_rows.csv
 ```
 
-Strict mode still writes requested reports and quarantine exports when processing completes.
+`strict_crm` enables strict mode by default.
 
 If serious policy failures are found, the command exits with:
 
@@ -122,6 +144,23 @@ This means:
 ```text
 processing completed, but strict policy failed
 ```
+
+---
+
+## Override Strict Profile
+
+PowerShell:
+
+```powershell
+python scripts\run_csv_pipeline.py `
+    examples\csv\customer_migration_sample.csv `
+    data\processed\customer_migration_clean.csv `
+    --profile strict_crm `
+    --constraints-path examples\csv\customer_constraints.json `
+    --no-strict
+```
+
+This uses the `strict_crm` profile metadata but disables strict mode.
 
 ---
 
@@ -181,6 +220,8 @@ The CLI prints:
 CSV pipeline completed.
 Input file: ...
 Output file: ...
+Profile: ...
+Profile description: ...
 Diagnostic JSON report: ...
 Diagnostic HTML report: ...
 Quarantine candidates JSON: ...
