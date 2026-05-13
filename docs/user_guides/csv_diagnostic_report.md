@@ -11,6 +11,7 @@ Was the file parsed correctly?
 What data quality issues exist?
 Which rows or columns need review?
 Which validation rules failed?
+Which rows should be reviewed as quarantine candidates?
 ```
 
 ---
@@ -47,6 +48,7 @@ row_profiles
 row_classification
 type_diagnostics
 validation_report
+quarantine_candidates
 ```
 
 ---
@@ -236,6 +238,45 @@ Validation reports issues only. It does not block export by default.
 
 ---
 
+## `quarantine_candidates`
+
+Groups row-level issues from other diagnostic sections into one review list.
+
+Candidate sources include:
+
+```text
+row_classification
+type_diagnostics
+validation_report
+```
+
+Example:
+
+```json
+{
+  "row_index": 2,
+  "severity": "error",
+  "reason_count": 2,
+  "reasons": [
+    {
+      "source": "validation_report",
+      "code": "regex_pattern_failed",
+      "column": "email",
+      "value": "invalid-email"
+    }
+  ]
+}
+```
+
+Important:
+
+```text
+Quarantine candidates are review suggestions only.
+Rows are not removed or excluded from export automatically.
+```
+
+---
+
 ## Recommended Review Order
 
 Review the report in this order:
@@ -243,17 +284,18 @@ Review the report in this order:
 ```text
 1. parse_diagnostics
 2. row_classification
-3. validation_report
-4. type_diagnostics
-5. quality_report
-6. column_profiles
-7. row_profiles
+3. quarantine_candidates
+4. validation_report
+5. type_diagnostics
+6. quality_report
+7. column_profiles
+8. row_profiles
 ```
 
 Reason:
 
 ```text
-Structural issues should be understood before value-level issues.
+Structural issues and row review candidates should be understood before detailed value-level analysis.
 ```
 
 ---
@@ -268,5 +310,5 @@ Future stages may add:
 HTML reports
 CSV issue exports
 pretty CLI summaries
-quarantine candidate reports
+separate quarantine candidate exports
 ```
