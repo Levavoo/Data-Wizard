@@ -11,6 +11,9 @@ With report:
 
 With constraints:
     python scripts/run_csv_pipeline.py data/raw/input.csv data/processed/output.csv --constraints-path data/raw/constraints.json
+
+With strict mode:
+    python scripts/run_csv_pipeline.py data/raw/input.csv data/processed/output.csv --constraints-path data/raw/constraints.json --strict
 """
 
 import argparse
@@ -26,8 +29,11 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 from data_processor.core.pipeline import run_csv_pipeline
+from data_processor.reports.pipeline_status import exit_code_from_pipeline_status
 from data_processor.validators.constraint_config import load_constraints_from_config
 from data_processor.validators.constraints import Constraint
+
+EXECUTION_ERROR_EXIT_CODE = 1
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -65,6 +71,12 @@ def parse_arguments() -> argparse.Namespace:
         help="Optional JSON file containing validation constraints.",
     )
 
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit with code 2 when strict policy failures are reported.",
+    )
+
     return parser.parse_args()
 
 
@@ -88,19 +100,29 @@ def load_constraints_from_path(path: Path | None) -> list[Constraint]:
     return load_constraints_from_config(config)
 
 
-def main() -> None:
+def main() -> int:
     """
     Run the CSV pipeline from command-line arguments.
+
+    Returns:
+        Process exit code.
     """
     args = parse_arguments()
-    constraints = load_constraints_from_path(args.constraints_path)
 
-    result = run_csv_pipeline(
-        input_path=args.input_path,
-        output_path=args.output_path,
-        report_path=args.report_path,
-        constraints=constraints,
-    )
+    try:
+        constraints = load_constraints_from_path(args.constraints_path)
+
+        result = run_csv_pipeline(
+            input_path=args.input_path,
+            output_path=args.output_path,
+            report_path=args.report_path,
+            constraints=constraints,
+            strict_mode=args.strict,
+        )
+    except Exception as error:
+        print("CSV pipeline failed.", file=sys.stderr)
+        print(str(error), file=sys.stderr)
+        return EXECUTION_ERROR_EXIT_CODE
 
     print("CSV pipeline completed.")
     print()
@@ -113,6 +135,12 @@ def main() -> None:
     if args.constraints_path is not None:
         print(f"Constraints file: {args.constraints_path}")
 
+    print(f"Strict mode: {args.strict}")
+
+    print()
+    print("Pipeline status:")
+    pprint(result["pipeline_status"])
+
     print()
     print("Quality report:")
     pprint(result["quality_report"])
@@ -121,6 +149,8 @@ def main() -> None:
     print("Validation report:")
     pprint(result["diagnostic_bundle"]["validation_report"])
 
+    return exit_code_from_pipeline_status(result["pipeline_status"])
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
