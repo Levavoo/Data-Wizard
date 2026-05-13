@@ -14,6 +14,8 @@ PowerShell Command
 → data_processor.core.pipeline.run_csv_pipeline()
 → cleaned CSV output
 → optional diagnostic JSON report
+→ optional diagnostic HTML report
+→ process exit code
 ```
 
 ---
@@ -27,9 +29,12 @@ This script handles:
 - calling the CSV pipeline
 - printing the input path
 - printing the output path
-- printing the diagnostic report path if provided
+- printing the diagnostic JSON report path if provided
+- printing the diagnostic HTML report path if provided
+- printing the pipeline status
 - printing the quality report summary
 - printing the validation report summary
+- returning CLI exit codes
 
 It does not handle:
 
@@ -38,6 +43,7 @@ It does not handle:
 - validation directly
 - report construction directly
 - exporting directly
+- HTML rendering directly
 
 Those responsibilities belong to the core project modules.
 
@@ -60,7 +66,9 @@ Optional arguments:
 
 ```text
 --report-path
+--html-report-path
 --constraints-path
+--strict
 ```
 
 ---
@@ -82,8 +90,27 @@ parse arguments
 → load optional constraints
 → run pipeline
 → print summary
+→ print pipeline status
 → print quality report
 → print validation report
+→ return exit code
+```
+
+---
+
+## Exit Codes
+
+```text
+0 = successful execution, including non-strict runs with warnings/errors reported
+1 = execution error
+2 = strict policy failure
+```
+
+Important:
+
+```text
+Exit code 2 means processing completed but strict policy failed.
+Exit code 1 means the command itself failed to execute successfully.
 ```
 
 ---
@@ -98,13 +125,36 @@ python scripts\run_csv_pipeline.py `
 
 ---
 
-## Example Usage With Report Export
+## Example Usage With JSON Report Export
 
 ```powershell
 python scripts\run_csv_pipeline.py `
     data\raw\customers.csv `
     data\processed\customers_clean.csv `
     --report-path data\processed\customers_report.json
+```
+
+---
+
+## Example Usage With HTML Report Export
+
+```powershell
+python scripts\run_csv_pipeline.py `
+    data\raw\customers.csv `
+    data\processed\customers_clean.csv `
+    --html-report-path data\processed\customers_report.html
+```
+
+---
+
+## Example Usage With JSON and HTML Reports
+
+```powershell
+python scripts\run_csv_pipeline.py `
+    data\raw\customers.csv `
+    data\processed\customers_clean.csv `
+    --report-path data\processed\customers_report.json `
+    --html-report-path data\processed\customers_report.html
 ```
 
 ---
@@ -116,8 +166,25 @@ python scripts\run_csv_pipeline.py `
     data\raw\customers.csv `
     data\processed\customers_clean.csv `
     --constraints-path data\raw\customer_constraints.json `
-    --report-path data\processed\customers_report.json
+    --report-path data\processed\customers_report.json `
+    --html-report-path data\processed\customers_report.html
 ```
+
+---
+
+## Example Usage With Strict Mode
+
+```powershell
+python scripts\run_csv_pipeline.py `
+    data\raw\customers.csv `
+    data\processed\customers_clean.csv `
+    --constraints-path data\raw\customer_constraints.json `
+    --report-path data\processed\customers_report.json `
+    --html-report-path data\processed\customers_report.html `
+    --strict
+```
+
+Strict mode exits with code `2` when serious policy failures are reported.
 
 ---
 
@@ -157,8 +224,13 @@ CSV pipeline completed.
 
 Input file: data\raw\customers.csv
 Output file: data\processed\customers_clean.csv
-Diagnostic report: data\processed\customers_report.json
+Diagnostic JSON report: data\processed\customers_report.json
+Diagnostic HTML report: data\processed\customers_report.html
 Constraints file: data\raw\customer_constraints.json
+Strict mode: True
+
+Pipeline status:
+...
 
 Quality report:
 ...
@@ -196,6 +268,7 @@ receive input
 load simple config files
 call project modules
 show output
+return process exit codes
 ```
 
 They should not contain business logic.
@@ -209,8 +282,11 @@ CSV File
 → CLI Runner
 → Optional Constraint Config Loader
 → Pipeline
+→ Pipeline Status
 → Cleaned CSV
 → Optional Diagnostic JSON Report
+→ Optional Diagnostic HTML Report
+→ Exit Code
 ```
 
 ---
@@ -231,7 +307,9 @@ python scripts\run_csv_pipeline.py `
     data\raw\customers.csv `
     data\processed\customers_clean.csv `
     --constraints-path data\raw\customer_constraints.json `
-    --report-path data\processed\customers_report.json
+    --report-path data\processed\customers_report.json `
+    --html-report-path data\processed\customers_report.html `
+    --strict
 ```
 
 ---
@@ -256,8 +334,9 @@ Possible future additions:
 
 - verbose mode
 - dry-run mode
-- strict/tolerant mode
+- selectable strict policy modes
 - selectable cleaning profile
 - batch folder processing
 - logging
-- exit codes
+- more granular exit codes
+- richer HTML report rendering

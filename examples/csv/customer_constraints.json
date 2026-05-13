@@ -1,0 +1,25 @@
+[
+  {
+    "column": "customer_id",
+    "type": "required"
+  },
+  {
+    "column": "customer_id",
+    "type": "unique"
+  },
+  {
+    "column": "country",
+    "type": "allowed_values",
+    "values": ["Germany", "France", "Spain"]
+  },
+  {
+    "column": "email",
+    "type": "regex",
+    "pattern": "^[^@]+@[^@]+\\.[^@]+$"
+  },
+  {
+    "column": "amount",
+    "type": "min_value",
+    "value": 0
+  }
+]

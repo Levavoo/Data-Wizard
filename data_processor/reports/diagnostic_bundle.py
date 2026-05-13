@@ -2,8 +2,8 @@
 Diagnostic bundle utilities.
 
 This module combines quality reports, profiles, table metadata, parser diagnostics,
-row classification, type diagnostics, and validation reports into one structured
-diagnostic report.
+row classification, type diagnostics, validation reports, and quarantine candidates
+into one structured diagnostic report.
 
 Purpose:
 - create one complete report object
@@ -19,6 +19,7 @@ from data_processor.analysis.row_classification import classify_table_rows
 from data_processor.analysis.row_profile import profile_all_rows
 from data_processor.core.table import Table
 from data_processor.inference.type_diagnostics import analyze_table_type_evidence
+from data_processor.reports.quarantine_candidates import build_quarantine_candidates
 from data_processor.validators.constraints import ValidationResult
 from data_processor.validators.quality_report import generate_quality_report
 from data_processor.validators.validation_report import generate_validation_report
@@ -44,16 +45,30 @@ def build_diagnostic_bundle(
     if validation_results is None:
         validation_results = []
 
+    quality_report = generate_quality_report(table)
+    column_profiles = profile_all_columns(table)
+    row_profiles = profile_all_rows(table)
+    row_classification = classify_table_rows(table)
+    type_diagnostics = analyze_table_type_evidence(table)
+    validation_report = generate_validation_report(validation_results)
+    quarantine_candidates = build_quarantine_candidates(
+        table_rows=table.rows,
+        row_classification=row_classification,
+        type_diagnostics=type_diagnostics,
+        validation_report=validation_report,
+    )
+
     return {
         "table_name": table.name,
         "row_count": table.row_count(),
         "column_count": table.column_count(),
         "metadata": table.metadata,
         "parse_diagnostics": table.metadata.get("parse_diagnostics", {}),
-        "quality_report": generate_quality_report(table),
-        "column_profiles": profile_all_columns(table),
-        "row_profiles": profile_all_rows(table),
-        "row_classification": classify_table_rows(table),
-        "type_diagnostics": analyze_table_type_evidence(table),
-        "validation_report": generate_validation_report(validation_results),
+        "quality_report": quality_report,
+        "column_profiles": column_profiles,
+        "row_profiles": row_profiles,
+        "row_classification": row_classification,
+        "type_diagnostics": type_diagnostics,
+        "validation_report": validation_report,
+        "quarantine_candidates": quarantine_candidates,
     }

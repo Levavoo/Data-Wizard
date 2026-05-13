@@ -1,0 +1,8 @@
+Customer ID,Name,Country,Email,Amount,Signup Date,Active
+1,Alice Meyer,Germany,alice@example.com,"1,000.50",2026-01-15,yes
+2,Bob Schmidt,France,bob@example.com,"250,75",15.02.2026,no
+2,Carla Rossi,Mars,invalid-email,"-5",2026/03/01,true
+4,,Spain,#N/A,"5.500,00",2026-04-10,Y
+5,Daniel Klein,unknown,daniel@example.com,not available,not available,N
+TOTAL,,,,5746.25,,
+End of export,,,,,,
