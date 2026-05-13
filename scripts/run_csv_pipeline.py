@@ -6,8 +6,11 @@ This script allows the CSV pipeline to be executed from PowerShell.
 Example:
     python scripts/run_csv_pipeline.py data/raw/input.csv data/processed/output.csv
 
-With report:
+With JSON report:
     python scripts/run_csv_pipeline.py data/raw/input.csv data/processed/output.csv --report-path data/processed/report.json
+
+With HTML report:
+    python scripts/run_csv_pipeline.py data/raw/input.csv data/processed/output.csv --html-report-path data/processed/report.html
 
 With constraints:
     python scripts/run_csv_pipeline.py data/raw/input.csv data/processed/output.csv --constraints-path data/raw/constraints.json
@@ -65,6 +68,13 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "--html-report-path",
+        type=Path,
+        default=None,
+        help="Optional path where the diagnostic HTML report should be written.",
+    )
+
+    parser.add_argument(
         "--constraints-path",
         type=Path,
         default=None,
@@ -116,6 +126,7 @@ def main() -> int:
             input_path=args.input_path,
             output_path=args.output_path,
             report_path=args.report_path,
+            html_report_path=args.html_report_path,
             constraints=constraints,
             strict_mode=args.strict,
         )
@@ -130,7 +141,10 @@ def main() -> int:
     print(f"Output file: {args.output_path}")
 
     if args.report_path is not None:
-        print(f"Diagnostic report: {args.report_path}")
+        print(f"Diagnostic JSON report: {args.report_path}")
+
+    if args.html_report_path is not None:
+        print(f"Diagnostic HTML report: {args.html_report_path}")
 
     if args.constraints_path is not None:
         print(f"Constraints file: {args.constraints_path}")
