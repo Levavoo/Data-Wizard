@@ -27,11 +27,13 @@ data_processor/validators/constraint_config.py
 - pipeline can process the example CSV
 - cleaned CSV output is written
 - JSON diagnostic report is written
+- HTML diagnostic report is written
 - diagnostic bundle contains expected report sections
 - validation failures are detected
 - suspicious rows are detected
 - quarantine candidates are detected
-- exported report includes quarantine candidates
+- exported JSON report includes quarantine candidates
+- exported HTML report includes expected sections
 
 ---
 
@@ -47,4 +49,4 @@ python -m pytest tests/test_example_csv_workflow.py
 
 This is a workflow smoke test.
 
-It should not duplicate every unit test for parsing, cleaning, validation, quarantine candidate building, or reporting.
+It should not duplicate every unit test for parsing, cleaning, validation, quarantine candidate building, HTML rendering, or reporting.
