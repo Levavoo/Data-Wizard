@@ -9,8 +9,8 @@ Example:
 With config:
     python scripts/run_csv_pipeline.py --config examples/csv/customer_migration_config.json
 
-With profile:
-    python scripts/run_csv_pipeline.py data/raw/input.csv data/processed/output.csv --profile migration_audit
+With explicit CSV detection options:
+    python scripts/run_csv_pipeline.py data/raw/input.csv data/processed/output.csv --encoding utf-8 --delimiter ";"
 """
 
 import argparse
@@ -73,6 +73,25 @@ def parse_arguments() -> argparse.Namespace:
         choices=list_builtin_profile_names(),
         default=None,
         help="Optional built-in cleaning profile to use.",
+    )
+
+    parser.add_argument(
+        "--encoding",
+        default=None,
+        help="Optional explicit CSV text encoding.",
+    )
+
+    parser.add_argument(
+        "--delimiter",
+        default=None,
+        help="Optional explicit CSV delimiter.",
+    )
+
+    parser.add_argument(
+        "--no-auto-detect-csv",
+        action="store_true",
+        default=None,
+        help="Disable CSV encoding and delimiter auto-detection.",
     )
 
     parser.add_argument(
@@ -191,6 +210,9 @@ def build_runtime_options(args: argparse.Namespace) -> dict[str, Any]:
             "quarantine_rows_path": None,
             "accepted_rows_path": None,
             "strict_mode": False,
+            "encoding": None,
+            "delimiter": None,
+            "auto_detect_csv": True,
         }
 
     _apply_cli_overrides(runtime_options, args)
@@ -220,6 +242,15 @@ def _apply_cli_overrides(
     for key, value in path_overrides.items():
         if value is not None:
             runtime_options[key] = value
+
+    if args.encoding is not None:
+        runtime_options["encoding"] = args.encoding
+
+    if args.delimiter is not None:
+        runtime_options["delimiter"] = args.delimiter
+
+    if args.no_auto_detect_csv is True:
+        runtime_options["auto_detect_csv"] = False
 
     strict_override = resolve_cli_strict_override(args)
 
@@ -271,6 +302,9 @@ def main() -> int:
             accepted_rows_path=runtime_options["accepted_rows_path"],
             constraints=constraints,
             strict_mode=runtime_options["strict_mode"],
+            encoding=runtime_options["encoding"],
+            delimiter=runtime_options["delimiter"],
+            auto_detect_csv=runtime_options["auto_detect_csv"],
         )
     except Exception as error:
         print("CSV pipeline failed.", file=sys.stderr)
@@ -287,6 +321,9 @@ def main() -> int:
     print(f"Output file: {runtime_options['output_path']}")
     print(f"Profile: {profile_options['profile_name']}")
     print(f"Profile description: {profile_options['profile_description']}")
+    print(f"CSV encoding: {runtime_options['encoding'] or 'auto'}")
+    print(f"CSV delimiter: {runtime_options['delimiter'] or 'auto'}")
+    print(f"CSV auto-detect: {runtime_options['auto_detect_csv']}")
 
     if runtime_options["report_path"] is not None:
         print(f"Diagnostic JSON report: {runtime_options['report_path']}")
