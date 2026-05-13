@@ -30,6 +30,8 @@ data_processor/validators/constraint_config.py
 - diagnostic bundle contains expected report sections
 - validation failures are detected
 - suspicious rows are detected
+- quarantine candidates are detected
+- exported report includes quarantine candidates
 
 ---
 
@@ -45,4 +47,4 @@ python -m pytest tests/test_example_csv_workflow.py
 
 This is a workflow smoke test.
 
-It should not duplicate every unit test for parsing, cleaning, validation, or reporting.
+It should not duplicate every unit test for parsing, cleaning, validation, quarantine candidate building, or reporting.
