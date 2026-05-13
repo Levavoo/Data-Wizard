@@ -29,6 +29,7 @@ def test_run_csv_pipeline_creates_output_file(tmp_path: Path) -> None:
     assert "quality_report" in result
     assert "validation_results" in result
     assert "diagnostic_bundle" in result
+    assert "pipeline_status" in result
 
 
 def test_run_csv_pipeline_quality_report(tmp_path: Path) -> None:
@@ -280,6 +281,81 @@ def test_run_csv_pipeline_reports_quarantine_candidates(tmp_path: Path) -> None:
     assert quarantine_candidates["candidate_count"] >= 2
     assert quarantine_candidates["summary"]["error"] >= 1
     assert quarantine_candidates["summary"]["warning"] >= 1
+    assert output_path.exists()
+
+
+def test_run_csv_pipeline_returns_non_strict_status_by_default(
+    tmp_path: Path,
+) -> None:
+    """
+    Verify default pipeline status remains non-strict and does not fail policy.
+    """
+    input_path = tmp_path / "customers.csv"
+    output_path = tmp_path / "output.csv"
+
+    input_path.write_text(
+        "Email\n"
+        "invalid-email\n",
+        encoding="utf-8",
+    )
+
+    constraints = [
+        Constraint(
+            column_name="email",
+            constraint_type="regex_pattern",
+            value=r"^[^@]+@[^@]+\.[^@]+$",
+        )
+    ]
+
+    result = run_csv_pipeline(
+        input_path=input_path,
+        output_path=output_path,
+        constraints=constraints,
+    )
+
+    pipeline_status = result["pipeline_status"]
+
+    assert pipeline_status["status"] == "completed_with_warnings"
+    assert pipeline_status["strict_mode"] is False
+    assert pipeline_status["strict_mode_failed"] is False
+    assert output_path.exists()
+
+
+def test_run_csv_pipeline_returns_failed_policy_in_strict_mode(
+    tmp_path: Path,
+) -> None:
+    """
+    Verify strict mode reports failed_policy without blocking export.
+    """
+    input_path = tmp_path / "customers.csv"
+    output_path = tmp_path / "output.csv"
+
+    input_path.write_text(
+        "Email\n"
+        "invalid-email\n",
+        encoding="utf-8",
+    )
+
+    constraints = [
+        Constraint(
+            column_name="email",
+            constraint_type="regex_pattern",
+            value=r"^[^@]+@[^@]+\.[^@]+$",
+        )
+    ]
+
+    result = run_csv_pipeline(
+        input_path=input_path,
+        output_path=output_path,
+        constraints=constraints,
+        strict_mode=True,
+    )
+
+    pipeline_status = result["pipeline_status"]
+
+    assert pipeline_status["status"] == "failed_policy"
+    assert pipeline_status["strict_mode"] is True
+    assert pipeline_status["strict_mode_failed"] is True
     assert output_path.exists()
 
 
