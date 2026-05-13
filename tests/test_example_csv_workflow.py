@@ -32,6 +32,7 @@ def test_example_customer_migration_workflow(tmp_path: Path) -> None:
     assert report_path.exists()
 
     diagnostic_bundle = result["diagnostic_bundle"]
+    pipeline_status = result["pipeline_status"]
 
     assert "parse_diagnostics" in diagnostic_bundle
     assert "quality_report" in diagnostic_bundle
@@ -52,6 +53,9 @@ def test_example_customer_migration_workflow(tmp_path: Path) -> None:
     assert quarantine_candidates["candidate_count"] > 0
     assert quarantine_candidates["summary"]["error"] > 0
     assert quarantine_candidates["summary"]["warning"] > 0
+    assert pipeline_status["status"] == "completed_with_warnings"
+    assert pipeline_status["strict_mode"] is False
+    assert pipeline_status["strict_mode_failed"] is False
 
     exported_report = json.loads(report_path.read_text(encoding="utf-8"))
 
