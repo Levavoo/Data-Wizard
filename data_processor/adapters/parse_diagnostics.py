@@ -25,6 +25,7 @@ class ParseDiagnostics:
     empty_headers: list[int] = field(default_factory=list)
     delimiter: str | None = None
     encoding: str | None = None
+    detection: dict[str, Any] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
 
     def add_extra_fields(self, row_index: int, count: int) -> None:
@@ -60,5 +61,6 @@ class ParseDiagnostics:
             "empty_headers": self.empty_headers,
             "delimiter": self.delimiter,
             "encoding": self.encoding,
+            "detection": self.detection,
             "warnings": self.warnings,
         }
