@@ -13,6 +13,9 @@ def test_validate_pipeline_config_accepts_valid_config() -> None:
         "output_path": "output.csv",
         "profile": "migration_audit",
         "strict_mode": False,
+        "encoding": "utf-8",
+        "delimiter": ";",
+        "auto_detect_csv": True,
     }
 
     result = validate_pipeline_config(config)
@@ -44,6 +47,39 @@ def test_validate_pipeline_config_rejects_non_boolean_strict_mode() -> None:
                 "input_path": "input.csv",
                 "output_path": "output.csv",
                 "strict_mode": "yes",
+            }
+        )
+
+
+def test_validate_pipeline_config_rejects_non_boolean_auto_detect_csv() -> None:
+    with pytest.raises(TypeError, match="auto_detect_csv"):
+        validate_pipeline_config(
+            {
+                "input_path": "input.csv",
+                "output_path": "output.csv",
+                "auto_detect_csv": "no",
+            }
+        )
+
+
+def test_validate_pipeline_config_rejects_non_string_encoding() -> None:
+    with pytest.raises(TypeError, match="encoding"):
+        validate_pipeline_config(
+            {
+                "input_path": "input.csv",
+                "output_path": "output.csv",
+                "encoding": 123,
+            }
+        )
+
+
+def test_validate_pipeline_config_rejects_non_string_delimiter() -> None:
+    with pytest.raises(TypeError, match="delimiter"):
+        validate_pipeline_config(
+            {
+                "input_path": "input.csv",
+                "output_path": "output.csv",
+                "delimiter": 123,
             }
         )
 
