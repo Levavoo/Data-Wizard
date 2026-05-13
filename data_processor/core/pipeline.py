@@ -9,6 +9,7 @@ Purpose:
 - keep processing steps ordered
 - avoid putting cleaning logic directly into the pipeline
 - optionally validate constraints
+- optionally build strict-mode status
 - optionally export diagnostic reports
 """
 
@@ -24,6 +25,7 @@ from data_processor.exporters.json_report_exporter import export_report_to_json
 from data_processor.inference.schema_inference import infer_schema_metadata
 from data_processor.inference.type_inference import infer_table_types
 from data_processor.reports.diagnostic_bundle import build_diagnostic_bundle
+from data_processor.reports.pipeline_status import build_pipeline_status
 from data_processor.validators.constraints import Constraint
 from data_processor.validators.constraints import validate_table_constraints
 from data_processor.validators.quality_report import generate_quality_report
@@ -34,6 +36,7 @@ def run_csv_pipeline(
     output_path: str | Path,
     report_path: str | Path | None = None,
     constraints: list[Constraint] | None = None,
+    strict_mode: bool = False,
 ) -> dict[str, Any]:
     """
     Run the full CSV cleaning pipeline.
@@ -51,9 +54,12 @@ def run_csv_pipeline(
         constraints:
             Optional validation constraints to apply after cleaning and casting.
 
+        strict_mode:
+            Whether policy failures should be marked as strict-mode failures.
+
     Returns:
         Dictionary containing the final table, quality report,
-        diagnostic bundle, and validation results.
+        validation results, diagnostic bundle, and pipeline status.
     """
     if constraints is None:
         constraints = []
@@ -82,6 +88,11 @@ def run_csv_pipeline(
         validation_results=validation_results,
     )
 
+    pipeline_status = build_pipeline_status(
+        diagnostic_bundle=diagnostic_bundle,
+        strict_mode=strict_mode,
+    )
+
     export_table_to_csv(
         table=table,
         output_path=output_path,
@@ -98,4 +109,5 @@ def run_csv_pipeline(
         "quality_report": quality_report,
         "validation_results": validation_results,
         "diagnostic_bundle": diagnostic_bundle,
+        "pipeline_status": pipeline_status,
     }
