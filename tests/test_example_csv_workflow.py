@@ -16,6 +16,9 @@ def test_example_customer_migration_workflow(tmp_path: Path) -> None:
     output_path = tmp_path / "customer_migration_clean.csv"
     report_path = tmp_path / "customer_migration_report.json"
     html_report_path = tmp_path / "customer_migration_report.html"
+    quarantine_candidates_path = tmp_path / "quarantine_candidates.json"
+    quarantine_rows_path = tmp_path / "quarantine_rows.csv"
+    accepted_rows_path = tmp_path / "accepted_rows.csv"
 
     constraints_config = json.loads(
         EXAMPLE_CONSTRAINTS_PATH.read_text(encoding="utf-8")
@@ -27,12 +30,18 @@ def test_example_customer_migration_workflow(tmp_path: Path) -> None:
         output_path=output_path,
         report_path=report_path,
         html_report_path=html_report_path,
+        quarantine_candidates_path=quarantine_candidates_path,
+        quarantine_rows_path=quarantine_rows_path,
+        accepted_rows_path=accepted_rows_path,
         constraints=constraints,
     )
 
     assert output_path.exists()
     assert report_path.exists()
     assert html_report_path.exists()
+    assert quarantine_candidates_path.exists()
+    assert quarantine_rows_path.exists()
+    assert accepted_rows_path.exists()
 
     diagnostic_bundle = result["diagnostic_bundle"]
     pipeline_status = result["pipeline_status"]
@@ -61,12 +70,21 @@ def test_example_customer_migration_workflow(tmp_path: Path) -> None:
     assert pipeline_status["strict_mode_failed"] is False
 
     exported_report = json.loads(report_path.read_text(encoding="utf-8"))
+    exported_quarantine_candidates = json.loads(
+        quarantine_candidates_path.read_text(encoding="utf-8")
+    )
     html_report = html_report_path.read_text(encoding="utf-8")
+    quarantine_rows = quarantine_rows_path.read_text(encoding="utf-8")
+    accepted_rows = accepted_rows_path.read_text(encoding="utf-8")
 
     assert exported_report["table_name"] == "customer_migration_sample"
     assert "validation_report" in exported_report
     assert "row_classification" in exported_report
     assert "quarantine_candidates" in exported_report
+    assert exported_quarantine_candidates["candidate_count"] > 0
     assert "CSV Diagnostic Report" in html_report
     assert "Pipeline Status" in html_report
     assert "Quarantine Candidates" in html_report
+    assert "invalid-email" in quarantine_rows
+    assert "TOTAL" in quarantine_rows
+    assert "alice@example.com" in accepted_rows
