@@ -32,6 +32,12 @@ Constraint file:
 examples/csv/customer_constraints.json
 ```
 
+Config file:
+
+```text
+examples/csv/customer_migration_config.json
+```
+
 ---
 
 ## Output Files
@@ -48,6 +54,31 @@ data/processed/accepted_rows.csv
 ```
 
 The `data/processed/` folder is ignored by Git except for `.gitkeep`.
+
+---
+
+## Run With Config File
+
+PowerShell:
+
+```powershell
+python scripts\run_csv_pipeline.py --config examples\csv\customer_migration_config.json
+```
+
+This is the recommended repeatable command for the example workflow.
+
+The config file contains:
+
+```text
+input path
+output path
+profile
+constraints path
+JSON report path
+HTML report path
+quarantine export paths
+strict-mode setting
+```
 
 ---
 
@@ -147,6 +178,21 @@ processing completed, but strict policy failed
 
 ---
 
+## Override Config Values From CLI
+
+PowerShell:
+
+```powershell
+python scripts\run_csv_pipeline.py `
+    other_input.csv `
+    other_output.csv `
+    --config examples\csv\customer_migration_config.json
+```
+
+Explicit CLI values override config values.
+
+---
+
 ## Override Strict Profile
 
 PowerShell:
@@ -218,6 +264,7 @@ The CLI prints:
 
 ```text
 CSV pipeline completed.
+Config file: ...
 Input file: ...
 Output file: ...
 Profile: ...
