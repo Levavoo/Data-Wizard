@@ -66,3 +66,22 @@ def test_resolve_pipeline_config_options_uses_default_profile_when_missing() -> 
 
     assert result["profile_options"]["profile_name"] == "default"
     assert result["strict_mode"] is False
+    assert result["auto_detect_csv"] is True
+    assert result["encoding"] is None
+    assert result["delimiter"] is None
+
+
+def test_resolve_pipeline_config_options_preserves_detection_options() -> None:
+    result = resolve_pipeline_config_options(
+        {
+            "input_path": "input.csv",
+            "output_path": "output.csv",
+            "encoding": "cp1252",
+            "delimiter": ";",
+            "auto_detect_csv": False,
+        }
+    )
+
+    assert result["encoding"] == "cp1252"
+    assert result["delimiter"] == ";"
+    assert result["auto_detect_csv"] is False
