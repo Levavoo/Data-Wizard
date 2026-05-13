@@ -96,6 +96,21 @@ cleaned table and CSV export remain available
 
 ---
 
+### `test_run_csv_pipeline_reports_quarantine_candidates`
+
+Verifies quarantine candidates are reported without removing rows.
+
+Expected behavior:
+
+```text
+validation failures produce error candidates
+suspicious rows produce warning candidates
+cleaned table still contains all rows
+CSV export still runs
+```
+
+---
+
 ### `test_run_csv_pipeline_converts_whitespace_only_cells_to_null`
 
 Verifies whitespace-only CSV cells become `None` during normal pipeline execution.
@@ -104,13 +119,13 @@ Verifies whitespace-only CSV cells become `None` during normal pipeline executio
 
 ### `test_run_csv_pipeline_returns_diagnostic_bundle`
 
-Verifies the pipeline returns a diagnostic bundle including row classification and type diagnostics.
+Verifies the pipeline returns a diagnostic bundle including row classification, type diagnostics, and quarantine candidates.
 
 ---
 
 ### `test_run_csv_pipeline_exports_diagnostic_report`
 
-Verifies the pipeline exports a JSON diagnostic report including row classification and type diagnostics when `report_path` is provided.
+Verifies the pipeline exports a JSON diagnostic report including row classification, type diagnostics, and quarantine candidates when `report_path` is provided.
 
 ---
 
