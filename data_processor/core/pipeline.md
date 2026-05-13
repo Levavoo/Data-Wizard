@@ -6,7 +6,7 @@
 
 This module connects existing modules.
 
-It does not contain cleaning, parsing, validation, reporting, or export logic itself.
+It does not contain cleaning, parsing, validation, reporting, export, or CLI exit logic itself.
 
 Architecture:
 
@@ -21,16 +21,17 @@ Input CSV
 → Optional Constraint Validation
 → Quality Report
 → Diagnostic Bundle
+→ Pipeline Status
 → CSV Exporter
 → Optional JSON Report Exporter
-→ Cleaned CSV + Diagnostic Report
+→ Cleaned CSV + Diagnostic Report + Status
 ```
 
 ---
 
 ## Main Function
 
-### `run_csv_pipeline(input_path, output_path, report_path=None, constraints=None)`
+### `run_csv_pipeline(input_path, output_path, report_path=None, constraints=None, strict_mode=False)`
 
 Runs the complete CSV workflow.
 
@@ -44,6 +45,7 @@ Runs the complete CSV workflow.
 | `output_path` | `str | Path` | Target cleaned CSV output path |
 | `report_path` | `str | Path | None` | Optional diagnostic JSON report output path |
 | `constraints` | `list[Constraint] | None` | Optional validation constraints |
+| `strict_mode` | `bool` | Optional strict policy status mode |
 
 ---
 
@@ -182,11 +184,27 @@ row profiles
 row classification
 type diagnostics
 validation report
+quarantine candidates
 ```
 
 ---
 
-### 11. Export Cleaned CSV
+### 11. Build Pipeline Status
+
+```python
+pipeline_status = build_pipeline_status(
+    diagnostic_bundle=diagnostic_bundle,
+    strict_mode=strict_mode,
+)
+```
+
+Creates automation-friendly status information.
+
+Strict mode is opt-in and defaults to `False`.
+
+---
+
+### 12. Export Cleaned CSV
 
 ```python
 export_table_to_csv(table, output_path)
@@ -194,9 +212,11 @@ export_table_to_csv(table, output_path)
 
 Writes cleaned data to disk.
 
+Strict policy failure does not block CSV export.
+
 ---
 
-### 12. Optionally Export Diagnostic JSON Report
+### 13. Optionally Export Diagnostic JSON Report
 
 ```python
 if report_path is not None:
@@ -220,12 +240,13 @@ The pipeline returns:
     "quality_report": quality_report,
     "validation_results": validation_results,
     "diagnostic_bundle": diagnostic_bundle,
+    "pipeline_status": pipeline_status,
 }
 ```
 
 ---
 
-## Example With Constraints
+## Example With Constraints and Strict Mode
 
 ```python
 from data_processor.core.pipeline import run_csv_pipeline
@@ -241,6 +262,7 @@ result = run_csv_pipeline(
     output_path="data/processed/customers_clean.csv",
     report_path="data/processed/customers_report.json",
     constraints=constraints,
+    strict_mode=True,
 )
 ```
 
@@ -258,6 +280,7 @@ It should not:
 - validate rules directly
 - write CSV manually
 - build report internals manually
+- decide CLI exit codes directly
 
 Those responsibilities belong to dedicated modules.
 
@@ -286,6 +309,8 @@ Optional Constraint Validation
 ↓
 Diagnostic Bundle
 ↓
+Pipeline Status
+↓
 Cleaned CSV
 ↓
 Optional Diagnostic JSON Report
@@ -302,6 +327,7 @@ CSV input
 CSV output
 optional JSON diagnostic report
 optional constraint validation
+optional strict status mode
 basic cleaning
 type inference
 type-aware casting
@@ -312,6 +338,8 @@ row classification
 mixed-type diagnostics
 quality reporting
 validation reporting
+quarantine candidate reporting
+pipeline status reporting
 ```
 
 ---
@@ -321,12 +349,11 @@ validation reporting
 Possible future additions:
 
 - report path auto-generation
-- strict/tolerant parsing mode
+- selectable strict policy modes
 - source file metadata in diagnostic bundle
 - output file metadata in diagnostic bundle
 - execution duration
 - pipeline version
 - cleaning profile support
 - batch CSV processing
-- export-blocking validation policy
-- quarantine support
+- quarantine export support
