@@ -19,6 +19,9 @@ OPTIONAL_CONFIG_FIELDS = {
     "quarantine_rows_path",
     "accepted_rows_path",
     "strict_mode",
+    "encoding",
+    "delimiter",
+    "auto_detect_csv",
 }
 ALLOWED_CONFIG_FIELDS = REQUIRED_CONFIG_FIELDS | OPTIONAL_CONFIG_FIELDS
 
@@ -45,20 +48,6 @@ def load_pipeline_config(path: str | Path) -> dict[str, Any]:
 def validate_pipeline_config(config: dict[str, Any]) -> dict[str, Any]:
     """
     Validate a CSV pipeline config dictionary.
-
-    Args:
-        config:
-            Config dictionary.
-
-    Returns:
-        Copy of validated config dictionary.
-
-    Raises:
-        TypeError:
-            If config is not a dictionary.
-
-        ValueError:
-            If required fields are missing or unknown fields are present.
     """
     if not isinstance(config, dict):
         raise TypeError("Pipeline config must be a JSON object.")
@@ -79,5 +68,14 @@ def validate_pipeline_config(config: dict[str, Any]) -> dict[str, Any]:
 
     if "strict_mode" in config and not isinstance(config["strict_mode"], bool):
         raise TypeError("Pipeline config field 'strict_mode' must be a boolean.")
+
+    if "auto_detect_csv" in config and not isinstance(config["auto_detect_csv"], bool):
+        raise TypeError("Pipeline config field 'auto_detect_csv' must be a boolean.")
+
+    if "encoding" in config and not isinstance(config["encoding"], str):
+        raise TypeError("Pipeline config field 'encoding' must be a string.")
+
+    if "delimiter" in config and not isinstance(config["delimiter"], str):
+        raise TypeError("Pipeline config field 'delimiter' must be a string.")
 
     return dict(config)
