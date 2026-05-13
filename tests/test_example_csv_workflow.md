@@ -15,6 +15,7 @@ examples/csv/customer_migration_sample.csv
 examples/csv/customer_constraints.json
 data_processor/core/pipeline.py
 data_processor/validators/constraint_config.py
+scripts/run_csv_pipeline.py
 ```
 
 ---
@@ -39,6 +40,7 @@ data_processor/validators/constraint_config.py
 - exported HTML report includes expected sections
 - quarantine rows contain review candidates
 - accepted rows contain non-candidate rows
+- CLI can run the example workflow with a cleaning profile
 
 ---
 
@@ -54,4 +56,4 @@ python -m pytest tests/test_example_csv_workflow.py
 
 This is a workflow smoke test.
 
-It should not duplicate every unit test for parsing, cleaning, validation, quarantine candidate building, row selection, HTML rendering, or reporting.
+It should not duplicate every unit test for parsing, cleaning, validation, quarantine candidate building, row selection, HTML rendering, profile resolution, or reporting.
