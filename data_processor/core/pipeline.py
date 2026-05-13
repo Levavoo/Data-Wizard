@@ -11,6 +11,7 @@ Purpose:
 - optionally validate constraints
 - optionally build strict-mode status
 - optionally export diagnostic reports
+- optionally export quarantine review files
 """
 
 from pathlib import Path
@@ -23,11 +24,16 @@ from data_processor.cleaners.type_caster import cast_table_by_schema
 from data_processor.exporters.csv_exporter import export_table_to_csv
 from data_processor.exporters.html_report_exporter import export_report_to_html
 from data_processor.exporters.json_report_exporter import export_report_to_json
+from data_processor.exporters.quarantine_json_exporter import (
+    export_quarantine_candidates_to_json,
+)
 from data_processor.inference.schema_inference import infer_schema_metadata
 from data_processor.inference.type_inference import infer_table_types
 from data_processor.reports.diagnostic_bundle import build_diagnostic_bundle
 from data_processor.reports.html_report import render_html_report
 from data_processor.reports.pipeline_status import build_pipeline_status
+from data_processor.reports.quarantine_row_selection import select_accepted_rows
+from data_processor.reports.quarantine_row_selection import select_quarantine_rows
 from data_processor.validators.constraints import Constraint
 from data_processor.validators.constraints import validate_table_constraints
 from data_processor.validators.quality_report import generate_quality_report
@@ -38,6 +44,9 @@ def run_csv_pipeline(
     output_path: str | Path,
     report_path: str | Path | None = None,
     html_report_path: str | Path | None = None,
+    quarantine_candidates_path: str | Path | None = None,
+    quarantine_rows_path: str | Path | None = None,
+    accepted_rows_path: str | Path | None = None,
     constraints: list[Constraint] | None = None,
     strict_mode: bool = False,
 ) -> dict[str, Any]:
@@ -56,6 +65,15 @@ def run_csv_pipeline(
 
         html_report_path:
             Optional target HTML diagnostic report path.
+
+        quarantine_candidates_path:
+            Optional target JSON quarantine candidate report path.
+
+        quarantine_rows_path:
+            Optional target CSV path containing quarantine candidate rows.
+
+        accepted_rows_path:
+            Optional target CSV path containing non-quarantine rows.
 
         constraints:
             Optional validation constraints to apply after cleaning and casting.
@@ -99,6 +117,8 @@ def run_csv_pipeline(
         strict_mode=strict_mode,
     )
 
+    quarantine_candidates = diagnostic_bundle["quarantine_candidates"]
+
     export_table_to_csv(
         table=table,
         output_path=output_path,
@@ -118,6 +138,32 @@ def run_csv_pipeline(
         export_report_to_html(
             html_report=html_report,
             output_path=html_report_path,
+        )
+
+    if quarantine_candidates_path is not None:
+        export_quarantine_candidates_to_json(
+            quarantine_candidates=quarantine_candidates,
+            output_path=quarantine_candidates_path,
+        )
+
+    if quarantine_rows_path is not None:
+        quarantine_rows = select_quarantine_rows(
+            table=table,
+            quarantine_candidates=quarantine_candidates,
+        )
+        export_table_to_csv(
+            table=quarantine_rows,
+            output_path=quarantine_rows_path,
+        )
+
+    if accepted_rows_path is not None:
+        accepted_rows = select_accepted_rows(
+            table=table,
+            quarantine_candidates=quarantine_candidates,
+        )
+        export_table_to_csv(
+            table=accepted_rows,
+            output_path=accepted_rows_path,
         )
 
     return {
