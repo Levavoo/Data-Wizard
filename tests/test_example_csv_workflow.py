@@ -3,6 +3,7 @@ from pathlib import Path
 
 from data_processor.core.pipeline import run_csv_pipeline
 from data_processor.validators.constraint_config import load_constraints_from_config
+from scripts.run_csv_pipeline import main
 
 
 EXAMPLE_CSV_PATH = Path("examples/csv/customer_migration_sample.csv")
@@ -88,3 +89,40 @@ def test_example_customer_migration_workflow(tmp_path: Path) -> None:
     assert "invalid-email" in quarantine_rows
     assert "TOTAL" in quarantine_rows
     assert "alice@example.com" in accepted_rows
+
+
+def test_example_customer_migration_workflow_with_profile(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """
+    Verify the documented example can run through the CLI with a profile.
+    """
+    output_path = tmp_path / "profile_customer_migration_clean.csv"
+    report_path = tmp_path / "profile_customer_migration_report.json"
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_csv_pipeline.py",
+            str(EXAMPLE_CSV_PATH),
+            str(output_path),
+            "--profile",
+            "migration_audit",
+            "--constraints-path",
+            str(EXAMPLE_CONSTRAINTS_PATH),
+            "--report-path",
+            str(report_path),
+        ],
+    )
+
+    exit_code = main()
+
+    assert exit_code == 0
+    assert output_path.exists()
+    assert report_path.exists()
+
+    exported_report = json.loads(report_path.read_text(encoding="utf-8"))
+
+    assert exported_report["table_name"] == "customer_migration_sample"
+    assert "quarantine_candidates" in exported_report
