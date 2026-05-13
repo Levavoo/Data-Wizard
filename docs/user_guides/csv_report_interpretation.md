@@ -15,11 +15,12 @@ Review report sections in this order:
 ```text
 1. parse_diagnostics
 2. row_classification
-3. validation_report
-4. type_diagnostics
-5. quality_report
-6. column_profiles
-7. row_profiles
+3. quarantine_candidates
+4. validation_report
+5. type_diagnostics
+6. quality_report
+7. column_profiles
+8. row_profiles
 ```
 
 ---
@@ -75,7 +76,33 @@ Rows are not removed automatically.
 
 ---
 
-## 3. Validation Report
+## 3. Quarantine Candidates
+
+Use this section to review rows that collect one or more serious or suspicious signals.
+
+Candidate sources include:
+
+```text
+row_classification
+validation_report
+type_diagnostics
+```
+
+Action:
+
+```text
+Review candidates before migration or import.
+```
+
+Current behavior:
+
+```text
+Candidates are not removed, quarantined, or excluded from export automatically.
+```
+
+---
+
+## 4. Validation Report
 
 Use this section to find failed business or migration rules.
 
@@ -103,7 +130,7 @@ Validation failures do not block CSV export by default.
 
 ---
 
-## 4. Type Diagnostics
+## 5. Type Diagnostics
 
 Use this section to identify columns that mostly look like one type but contain incompatible values.
 
@@ -121,7 +148,7 @@ Review invalid values in mostly numeric/date/boolean columns.
 
 ---
 
-## 5. Quality Report
+## 6. Quality Report
 
 Use this section for general data quality issues.
 
@@ -142,7 +169,7 @@ Decide whether missing or duplicate values are acceptable for your target system
 
 ---
 
-## 6. Column Profiles
+## 7. Column Profiles
 
 Use this section to understand each column.
 
@@ -162,7 +189,7 @@ Use column profiles to understand whether inferred structure matches your expect
 
 ---
 
-## 7. Row Profiles
+## 8. Row Profiles
 
 Use this section to review row-level quality.
 
@@ -192,6 +219,7 @@ invalid required IDs
 duplicate primary/customer IDs
 invalid emails for CRM import
 unsupported enum/category values
+quarantine candidates with error severity
 ```
 
 ### Usually warning/review
@@ -201,6 +229,7 @@ missing optional values
 summary/footer rows
 mixed-type diagnostics
 high-null columns
+quarantine candidates with warning severity
 ```
 
 The final decision depends on your target migration system.
