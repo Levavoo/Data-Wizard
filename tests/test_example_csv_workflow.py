@@ -8,6 +8,7 @@ from scripts.run_csv_pipeline import main
 
 EXAMPLE_CSV_PATH = Path("examples/csv/customer_migration_sample.csv")
 EXAMPLE_CONSTRAINTS_PATH = Path("examples/csv/customer_constraints.json")
+EXAMPLE_CONFIG_PATH = Path("examples/csv/customer_migration_config.json")
 
 
 def test_example_customer_migration_workflow(tmp_path: Path) -> None:
@@ -111,6 +112,41 @@ def test_example_customer_migration_workflow_with_profile(
             "migration_audit",
             "--constraints-path",
             str(EXAMPLE_CONSTRAINTS_PATH),
+            "--report-path",
+            str(report_path),
+        ],
+    )
+
+    exit_code = main()
+
+    assert exit_code == 0
+    assert output_path.exists()
+    assert report_path.exists()
+
+    exported_report = json.loads(report_path.read_text(encoding="utf-8"))
+
+    assert exported_report["table_name"] == "customer_migration_sample"
+    assert "quarantine_candidates" in exported_report
+
+
+def test_example_customer_migration_workflow_with_config(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """
+    Verify the documented example can run through the CLI with --config.
+    """
+    output_path = tmp_path / "config_customer_migration_clean.csv"
+    report_path = tmp_path / "config_customer_migration_report.json"
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_csv_pipeline.py",
+            str(EXAMPLE_CSV_PATH),
+            str(output_path),
+            "--config",
+            str(EXAMPLE_CONFIG_PATH),
             "--report-path",
             str(report_path),
         ],
