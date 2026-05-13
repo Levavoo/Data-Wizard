@@ -9,6 +9,7 @@ You will produce:
 ```text
 cleaned CSV output
 JSON diagnostic report
+optional strict-mode exit code
 ```
 
 ---
@@ -80,8 +81,41 @@ quality reporting
 row classification
 mixed-type diagnostics
 constraint validation
+quarantine candidate reporting
+pipeline status reporting
 CSV export
 JSON report export
+```
+
+Because this is non-strict mode, the command exits with code `0` when execution succeeds, even if diagnostics report issues.
+
+---
+
+## Run With Strict Mode
+
+PowerShell:
+
+```powershell
+python scripts\run_csv_pipeline.py `
+    examples\csv\customer_migration_sample.csv `
+    data\processed\customer_migration_clean.csv `
+    --constraints-path examples\csv\customer_constraints.json `
+    --report-path data\processed\customer_migration_report.json `
+    --strict
+```
+
+Strict mode still writes the cleaned CSV and diagnostic report.
+
+If serious policy failures are found, the command exits with:
+
+```text
+2
+```
+
+This means:
+
+```text
+processing completed, but strict policy failed
 ```
 
 ---
@@ -96,10 +130,23 @@ Input file: ...
 Output file: ...
 Diagnostic report: ...
 Constraints file: ...
+Strict mode: ...
+Pipeline status:
+...
 Quality report:
 ...
 Validation report:
 ...
+```
+
+---
+
+## Exit Codes
+
+```text
+0 = successful execution
+1 = execution error
+2 = strict policy failure
 ```
 
 ---
@@ -146,6 +193,7 @@ Review these sections first:
 ```text
 parse_diagnostics
 row_classification
+quarantine_candidates
 validation_report
 type_diagnostics
 quality_report
@@ -164,12 +212,13 @@ review unsupported countries
 review summary/footer rows
 review negative amounts
 review null-like values
+review quarantine candidates
 ```
 
 ---
 
 ## Important Limitation
 
-The pipeline reports issues but does not automatically remove suspicious rows or block export on validation failures.
+The pipeline reports issues but does not automatically remove suspicious rows or quarantine candidates.
 
-This is intentional for now.
+Strict mode reports policy failure through status and exit code only.
