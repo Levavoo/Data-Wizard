@@ -15,6 +15,7 @@ PowerShell Command
 → cleaned CSV output
 → optional diagnostic JSON report
 → optional diagnostic HTML report
+→ optional quarantine exports
 → process exit code
 ```
 
@@ -29,8 +30,8 @@ This script handles:
 - calling the CSV pipeline
 - printing the input path
 - printing the output path
-- printing the diagnostic JSON report path if provided
-- printing the diagnostic HTML report path if provided
+- printing diagnostic report paths if provided
+- printing quarantine export paths if provided
 - printing the pipeline status
 - printing the quality report summary
 - printing the validation report summary
@@ -44,6 +45,7 @@ It does not handle:
 - report construction directly
 - exporting directly
 - HTML rendering directly
+- quarantine row selection directly
 
 Those responsibilities belong to the core project modules.
 
@@ -67,6 +69,9 @@ Optional arguments:
 ```text
 --report-path
 --html-report-path
+--quarantine-candidates-path
+--quarantine-rows-path
+--accepted-rows-path
 --constraints-path
 --strict
 ```
@@ -125,28 +130,6 @@ python scripts\run_csv_pipeline.py `
 
 ---
 
-## Example Usage With JSON Report Export
-
-```powershell
-python scripts\run_csv_pipeline.py `
-    data\raw\customers.csv `
-    data\processed\customers_clean.csv `
-    --report-path data\processed\customers_report.json
-```
-
----
-
-## Example Usage With HTML Report Export
-
-```powershell
-python scripts\run_csv_pipeline.py `
-    data\raw\customers.csv `
-    data\processed\customers_clean.csv `
-    --html-report-path data\processed\customers_report.html
-```
-
----
-
 ## Example Usage With JSON and HTML Reports
 
 ```powershell
@@ -159,7 +142,20 @@ python scripts\run_csv_pipeline.py `
 
 ---
 
-## Example Usage With Constraints
+## Example Usage With Quarantine Exports
+
+```powershell
+python scripts\run_csv_pipeline.py `
+    data\raw\customers.csv `
+    data\processed\customers_clean.csv `
+    --quarantine-candidates-path data\processed\quarantine_candidates.json `
+    --quarantine-rows-path data\processed\quarantine_rows.csv `
+    --accepted-rows-path data\processed\accepted_rows.csv
+```
+
+---
+
+## Example Usage With Constraints, Reports, and Quarantine Exports
 
 ```powershell
 python scripts\run_csv_pipeline.py `
@@ -167,7 +163,10 @@ python scripts\run_csv_pipeline.py `
     data\processed\customers_clean.csv `
     --constraints-path data\raw\customer_constraints.json `
     --report-path data\processed\customers_report.json `
-    --html-report-path data\processed\customers_report.html
+    --html-report-path data\processed\customers_report.html `
+    --quarantine-candidates-path data\processed\quarantine_candidates.json `
+    --quarantine-rows-path data\processed\quarantine_rows.csv `
+    --accepted-rows-path data\processed\accepted_rows.csv
 ```
 
 ---
@@ -181,10 +180,15 @@ python scripts\run_csv_pipeline.py `
     --constraints-path data\raw\customer_constraints.json `
     --report-path data\processed\customers_report.json `
     --html-report-path data\processed\customers_report.html `
+    --quarantine-candidates-path data\processed\quarantine_candidates.json `
+    --quarantine-rows-path data\processed\quarantine_rows.csv `
+    --accepted-rows-path data\processed\accepted_rows.csv `
     --strict
 ```
 
 Strict mode exits with code `2` when serious policy failures are reported.
+
+Strict policy failure still writes requested reports and quarantine exports when processing completes.
 
 ---
 
@@ -226,6 +230,9 @@ Input file: data\raw\customers.csv
 Output file: data\processed\customers_clean.csv
 Diagnostic JSON report: data\processed\customers_report.json
 Diagnostic HTML report: data\processed\customers_report.html
+Quarantine candidates JSON: data\processed\quarantine_candidates.json
+Quarantine rows CSV: data\processed\quarantine_rows.csv
+Accepted rows CSV: data\processed\accepted_rows.csv
 Constraints file: data\raw\customer_constraints.json
 Strict mode: True
 
@@ -237,6 +244,17 @@ Quality report:
 
 Validation report:
 ...
+```
+
+---
+
+## Quarantine Export Safety
+
+```text
+normal cleaned CSV still includes all rows
+quarantine rows CSV is an additional explicit review file
+accepted rows CSV is an additional explicit split file
+rows are not deleted automatically
 ```
 
 ---
@@ -286,6 +304,9 @@ CSV File
 → Cleaned CSV
 → Optional Diagnostic JSON Report
 → Optional Diagnostic HTML Report
+→ Optional Quarantine Candidate JSON
+→ Optional Quarantine Rows CSV
+→ Optional Accepted Rows CSV
 → Exit Code
 ```
 
@@ -309,6 +330,9 @@ python scripts\run_csv_pipeline.py `
     --constraints-path data\raw\customer_constraints.json `
     --report-path data\processed\customers_report.json `
     --html-report-path data\processed\customers_report.html `
+    --quarantine-candidates-path data\processed\quarantine_candidates.json `
+    --quarantine-rows-path data\processed\quarantine_rows.csv `
+    --accepted-rows-path data\processed\accepted_rows.csv `
     --strict
 ```
 
@@ -340,3 +364,4 @@ Possible future additions:
 - logging
 - more granular exit codes
 - richer HTML report rendering
+- quarantine export summaries in CLI output
