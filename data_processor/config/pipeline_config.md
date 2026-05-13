@@ -50,7 +50,20 @@ quarantine_candidates_path
 quarantine_rows_path
 accepted_rows_path
 strict_mode
+encoding
+delimiter
+auto_detect_csv
 ```
+
+---
+
+## Detection Fields
+
+| Field | Meaning |
+|---|---|
+| `encoding` | Optional explicit CSV text encoding |
+| `delimiter` | Optional explicit CSV delimiter |
+| `auto_detect_csv` | Whether missing CSV encoding/delimiter settings should be detected |
 
 ---
 
@@ -63,6 +76,9 @@ config is a JSON object
 required fields are present
 unknown fields are rejected
 strict_mode is boolean when provided
+auto_detect_csv is boolean when provided
+encoding is string when provided
+delimiter is string when provided
 ```
 
 ---
