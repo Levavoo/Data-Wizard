@@ -359,6 +359,36 @@ def test_run_csv_pipeline_returns_failed_policy_in_strict_mode(
     assert output_path.exists()
 
 
+def test_run_csv_pipeline_exports_html_report(tmp_path: Path) -> None:
+    """
+    Verify the pipeline exports a diagnostic HTML report when requested.
+    """
+    input_path = tmp_path / "input.csv"
+    output_path = tmp_path / "output.csv"
+    html_report_path = tmp_path / "reports" / "report.html"
+
+    input_path.write_text(
+        "Name,Country\n" "Alice,Germany\n" "Bob,France\n",
+        encoding="utf-8",
+    )
+
+    run_csv_pipeline(
+        input_path=input_path,
+        output_path=output_path,
+        html_report_path=html_report_path,
+    )
+
+    assert output_path.exists()
+    assert html_report_path.exists()
+
+    html = html_report_path.read_text(encoding="utf-8")
+
+    assert "<!doctype html>" in html
+    assert "CSV Diagnostic Report" in html
+    assert "Pipeline Status" in html
+    assert "Quality Report" in html
+
+
 def test_run_csv_pipeline_converts_whitespace_only_cells_to_null(
     tmp_path: Path,
 ) -> None:
