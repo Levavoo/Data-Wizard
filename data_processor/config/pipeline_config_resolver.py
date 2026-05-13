@@ -49,6 +49,9 @@ def resolve_pipeline_config_options(config: dict[str, Any]) -> dict[str, Any]:
         "quarantine_rows_path": config.get("quarantine_rows_path"),
         "accepted_rows_path": config.get("accepted_rows_path"),
         "strict_mode": profile_options["strict_mode"],
+        "encoding": config.get("encoding"),
+        "delimiter": config.get("delimiter"),
+        "auto_detect_csv": config.get("auto_detect_csv", True),
     }
 
     return _convert_path_values(resolved)
