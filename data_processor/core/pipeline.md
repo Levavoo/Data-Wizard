@@ -24,14 +24,15 @@ Input CSV
 → Pipeline Status
 → CSV Exporter
 → Optional JSON Report Exporter
-→ Cleaned CSV + Diagnostic Report + Status
+→ Optional HTML Report Exporter
+→ Cleaned CSV + Diagnostic Reports + Status
 ```
 
 ---
 
 ## Main Function
 
-### `run_csv_pipeline(input_path, output_path, report_path=None, constraints=None, strict_mode=False)`
+### `run_csv_pipeline(input_path, output_path, report_path=None, html_report_path=None, constraints=None, strict_mode=False)`
 
 Runs the complete CSV workflow.
 
@@ -44,6 +45,7 @@ Runs the complete CSV workflow.
 | `input_path` | `str | Path` | Source CSV file path |
 | `output_path` | `str | Path` | Target cleaned CSV output path |
 | `report_path` | `str | Path | None` | Optional diagnostic JSON report output path |
+| `html_report_path` | `str | Path | None` | Optional diagnostic HTML report output path |
 | `constraints` | `list[Constraint] | None` | Optional validation constraints |
 | `strict_mode` | `bool` | Optional strict policy status mode |
 
@@ -230,6 +232,24 @@ Writes the diagnostic bundle to JSON if a report path is provided.
 
 ---
 
+### 14. Optionally Export Diagnostic HTML Report
+
+```python
+if html_report_path is not None:
+    html_report = render_html_report(
+        diagnostic_bundle=diagnostic_bundle,
+        pipeline_status=pipeline_status,
+    )
+    export_report_to_html(
+        html_report=html_report,
+        output_path=html_report_path,
+    )
+```
+
+Writes a static, self-contained HTML report if an HTML report path is provided.
+
+---
+
 ## Return Value
 
 The pipeline returns:
@@ -246,7 +266,7 @@ The pipeline returns:
 
 ---
 
-## Example With Constraints and Strict Mode
+## Example With Constraints, Strict Mode, and Reports
 
 ```python
 from data_processor.core.pipeline import run_csv_pipeline
@@ -261,6 +281,7 @@ result = run_csv_pipeline(
     input_path="data/raw/customers.csv",
     output_path="data/processed/customers_clean.csv",
     report_path="data/processed/customers_report.json",
+    html_report_path="data/processed/customers_report.html",
     constraints=constraints,
     strict_mode=True,
 )
@@ -281,6 +302,7 @@ It should not:
 - write CSV manually
 - build report internals manually
 - decide CLI exit codes directly
+- render HTML manually
 
 Those responsibilities belong to dedicated modules.
 
@@ -313,7 +335,9 @@ Pipeline Status
 ↓
 Cleaned CSV
 ↓
-Optional Diagnostic JSON Report
+Optional JSON Diagnostic Report
+↓
+Optional HTML Diagnostic Report
 ```
 
 ---
@@ -326,6 +350,7 @@ Supported now:
 CSV input
 CSV output
 optional JSON diagnostic report
+optional HTML diagnostic report
 optional constraint validation
 optional strict status mode
 basic cleaning
@@ -357,3 +382,4 @@ Possible future additions:
 - cleaning profile support
 - batch CSV processing
 - quarantine export support
+- richer HTML report sections
