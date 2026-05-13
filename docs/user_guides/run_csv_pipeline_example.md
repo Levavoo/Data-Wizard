@@ -9,6 +9,7 @@ You will produce:
 ```text
 cleaned CSV output
 JSON diagnostic report
+HTML diagnostic report
 optional strict-mode exit code
 ```
 
@@ -37,6 +38,7 @@ Recommended output paths:
 ```text
 data/processed/customer_migration_clean.csv
 data/processed/customer_migration_report.json
+data/processed/customer_migration_report.html
 ```
 
 The `data/processed/` folder is ignored by Git except for `.gitkeep`.
@@ -51,7 +53,8 @@ PowerShell:
 python scripts\run_csv_pipeline.py `
     examples\csv\customer_migration_sample.csv `
     data\processed\customer_migration_clean.csv `
-    --report-path data\processed\customer_migration_report.json
+    --report-path data\processed\customer_migration_report.json `
+    --html-report-path data\processed\customer_migration_report.html
 ```
 
 This runs cleaning and diagnostics but does not apply user-defined validation rules.
@@ -67,7 +70,8 @@ python scripts\run_csv_pipeline.py `
     examples\csv\customer_migration_sample.csv `
     data\processed\customer_migration_clean.csv `
     --constraints-path examples\csv\customer_constraints.json `
-    --report-path data\processed\customer_migration_report.json
+    --report-path data\processed\customer_migration_report.json `
+    --html-report-path data\processed\customer_migration_report.html
 ```
 
 This runs:
@@ -85,6 +89,7 @@ quarantine candidate reporting
 pipeline status reporting
 CSV export
 JSON report export
+HTML report export
 ```
 
 Because this is non-strict mode, the command exits with code `0` when execution succeeds, even if diagnostics report issues.
@@ -101,10 +106,11 @@ python scripts\run_csv_pipeline.py `
     data\processed\customer_migration_clean.csv `
     --constraints-path examples\csv\customer_constraints.json `
     --report-path data\processed\customer_migration_report.json `
+    --html-report-path data\processed\customer_migration_report.html `
     --strict
 ```
 
-Strict mode still writes the cleaned CSV and diagnostic report.
+Strict mode still writes the cleaned CSV, JSON report, and HTML report.
 
 If serious policy failures are found, the command exits with:
 
@@ -128,7 +134,8 @@ The CLI prints:
 CSV pipeline completed.
 Input file: ...
 Output file: ...
-Diagnostic report: ...
+Diagnostic JSON report: ...
+Diagnostic HTML report: ...
 Constraints file: ...
 Strict mode: ...
 Pipeline status:
@@ -186,17 +193,30 @@ code data\processed\customer_migration_report.json
 
 ---
 
+## Inspect the HTML Report
+
+PowerShell:
+
+```powershell
+Start-Process data\processed\customer_migration_report.html
+```
+
+The HTML report is intended for human review in a browser.
+
+---
+
 ## Important Report Sections
 
 Review these sections first:
 
 ```text
-parse_diagnostics
-row_classification
-quarantine_candidates
-validation_report
-type_diagnostics
-quality_report
+summary
+pipeline status
+quarantine candidates
+validation report
+row classification
+type diagnostics
+quality report
 ```
 
 ---
