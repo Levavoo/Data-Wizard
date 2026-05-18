@@ -1,0 +1,59 @@
+[
+  {
+    "column": "customer_id",
+    "type": "required"
+  },
+  {
+    "column": "customer_id",
+    "type": "unique"
+  },
+  {
+    "column": "email",
+    "type": "required"
+  },
+  {
+    "column": "email",
+    "type": "regex",
+    "pattern": "^[^@]+@[^@]+\\.[^@]+$"
+  },
+  {
+    "column": "email",
+    "type": "unique"
+  },
+  {
+    "column": "country",
+    "type": "required"
+  },
+  {
+    "column": "country",
+    "type": "allowed_values",
+    "values": [
+      "Germany",
+      "France",
+      "Italy",
+      "Czechia",
+      "Ireland",
+      "USA",
+      "Russia",
+      "Japan",
+      "Belgium",
+      "Spain",
+      "Norway"
+    ]
+  },
+  {
+    "column": "amount",
+    "type": "min_value",
+    "value": 0
+  },
+  {
+    "column": "score",
+    "type": "min_value",
+    "value": 0
+  },
+  {
+    "column": "score",
+    "type": "max_value",
+    "value": 100
+  }
+]
