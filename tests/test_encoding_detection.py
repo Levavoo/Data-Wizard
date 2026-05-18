@@ -9,7 +9,7 @@ def test_detect_text_encoding_detects_utf8(tmp_path: Path) -> None:
 
     result = detect_text_encoding(path)
 
-    assert result["selected_encoding"] in {"utf-8", "utf-8-sig"}
+    assert result["selected_encoding"] == "utf-8"
     assert result["confidence"] == "high"
 
 
