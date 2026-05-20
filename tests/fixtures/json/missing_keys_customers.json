@@ -1,0 +1,19 @@
+[
+  {
+    "customer_id": 1,
+    "name": "Alice",
+    "email": "alice@example.com",
+    "amount": 120.5
+  },
+  {
+    "customer_id": 2,
+    "name": "Bob",
+    "active": false
+  },
+  {
+    "customer_id": 3,
+    "email": "casey@example.com",
+    "amount": 99.99,
+    "active": true
+  }
+]
