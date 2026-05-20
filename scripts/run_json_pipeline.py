@@ -3,6 +3,7 @@ Command-line entry point for the JSON pipeline.
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -15,7 +16,8 @@ if str(PROJECT_ROOT) not in sys.path:
 from data_processor.config.pipeline_config import load_pipeline_config
 from data_processor.config.pipeline_config_resolver import resolve_pipeline_config_options
 from data_processor.core.json_pipeline import run_json_pipeline
-from data_processor.validators.constraint_config import load_constraints_from_file
+from data_processor.validators.constraint_config import load_constraints_from_config
+from data_processor.validators.constraints import Constraint
 
 EXECUTION_ERROR_EXIT_CODE = 1
 
@@ -90,6 +92,19 @@ def build_runtime_options(args: argparse.Namespace) -> dict[str, Any]:
     return runtime_options
 
 
+def load_constraints_from_path(path: Path | None) -> list[Constraint]:
+    """
+    Load validation constraints from an optional JSON file.
+    """
+    if path is None:
+        return []
+
+    with path.open(mode="r", encoding="utf-8") as constraints_file:
+        config = json.load(constraints_file)
+
+    return load_constraints_from_config(config)
+
+
 def main() -> int:
     """
     CLI entry point.
@@ -98,10 +113,7 @@ def main() -> int:
 
     try:
         runtime_options = build_runtime_options(args)
-        constraints = []
-
-        if runtime_options["constraints_path"] is not None:
-            constraints = load_constraints_from_file(runtime_options["constraints_path"])
+        constraints = load_constraints_from_path(runtime_options["constraints_path"])
 
         result = run_json_pipeline(
             input_path=runtime_options["input_path"],
