@@ -1,7 +1,7 @@
 """
-CSV pipeline config loader.
+Pipeline config loader.
 
-This module loads and validates JSON config files for CSV pipeline execution.
+This module loads and validates JSON config files for pipeline execution.
 It does not run the pipeline.
 """
 
@@ -11,6 +11,7 @@ from typing import Any
 
 REQUIRED_CONFIG_FIELDS = {"input_path", "output_path"}
 OPTIONAL_CONFIG_FIELDS = {
+    "input_format",
     "profile",
     "constraints_path",
     "report_path",
@@ -24,11 +25,12 @@ OPTIONAL_CONFIG_FIELDS = {
     "auto_detect_csv",
 }
 ALLOWED_CONFIG_FIELDS = REQUIRED_CONFIG_FIELDS | OPTIONAL_CONFIG_FIELDS
+ALLOWED_INPUT_FORMATS = {"csv", "json"}
 
 
 def load_pipeline_config(path: str | Path) -> dict[str, Any]:
     """
-    Load and validate a CSV pipeline JSON config file.
+    Load and validate a pipeline JSON config file.
 
     Args:
         path:
@@ -47,7 +49,7 @@ def load_pipeline_config(path: str | Path) -> dict[str, Any]:
 
 def validate_pipeline_config(config: dict[str, Any]) -> dict[str, Any]:
     """
-    Validate a CSV pipeline config dictionary.
+    Validate a pipeline config dictionary.
     """
     if not isinstance(config, dict):
         raise TypeError("Pipeline config must be a JSON object.")
@@ -65,6 +67,17 @@ def validate_pipeline_config(config: dict[str, Any]) -> dict[str, Any]:
             f"Pipeline config contains unknown field(s): {unknown}. "
             f"Allowed fields: {allowed}."
         )
+
+    if "input_format" in config:
+        if not isinstance(config["input_format"], str):
+            raise TypeError("Pipeline config field 'input_format' must be a string.")
+
+        if config["input_format"] not in ALLOWED_INPUT_FORMATS:
+            allowed = ", ".join(sorted(ALLOWED_INPUT_FORMATS))
+            raise ValueError(
+                "Pipeline config field 'input_format' must be one of: "
+                f"{allowed}."
+            )
 
     if "strict_mode" in config and not isinstance(config["strict_mode"], bool):
         raise TypeError("Pipeline config field 'strict_mode' must be a boolean.")
