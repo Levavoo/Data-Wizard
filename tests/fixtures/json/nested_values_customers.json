@@ -1,0 +1,20 @@
+[
+  {
+    "customer_id": 1,
+    "name": "Alice",
+    "address": {
+      "city": "Berlin",
+      "postal_code": "10115"
+    },
+    "tags": ["vip", "newsletter"]
+  },
+  {
+    "customer_id": 2,
+    "name": "Bob",
+    "address": {
+      "city": "Munich",
+      "postal_code": "80331"
+    },
+    "tags": ["standard"]
+  }
+]
