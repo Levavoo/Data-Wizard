@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`pipeline_config.py` loads and validates JSON config files for CSV pipeline execution.
+`pipeline_config.py` loads and validates JSON config files for pipeline execution.
 
 It belongs to the configuration layer.
 
@@ -42,6 +42,7 @@ output_path
 ## Optional Fields
 
 ```text
+input_format
 profile
 constraints_path
 report_path
@@ -57,6 +58,21 @@ auto_detect_csv
 
 ---
 
+## Input Format Field
+
+`input_format` is optional.
+
+Allowed values:
+
+```text
+csv
+json
+```
+
+When omitted, existing CSV behavior remains the default in CSV-focused commands.
+
+---
+
 ## Detection Fields
 
 | Field | Meaning |
@@ -64,6 +80,8 @@ auto_detect_csv
 | `encoding` | Optional explicit CSV text encoding |
 | `delimiter` | Optional explicit CSV delimiter |
 | `auto_detect_csv` | Whether missing CSV encoding/delimiter settings should be detected |
+
+These fields are CSV-specific and should not affect JSON parsing.
 
 ---
 
@@ -75,6 +93,7 @@ The loader validates:
 config is a JSON object
 required fields are present
 unknown fields are rejected
+input_format is one of csv/json when provided
 strict_mode is boolean when provided
 auto_detect_csv is boolean when provided
 encoding is string when provided
