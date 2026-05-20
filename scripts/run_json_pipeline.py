@@ -3,13 +3,21 @@ Command-line entry point for the JSON pipeline.
 """
 
 import argparse
+import sys
 from pathlib import Path
 from typing import Any
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from data_processor.config.pipeline_config import load_pipeline_config
 from data_processor.config.pipeline_config_resolver import resolve_pipeline_config_options
 from data_processor.core.json_pipeline import run_json_pipeline
 from data_processor.validators.constraint_config import load_constraints_from_file
+
+EXECUTION_ERROR_EXIT_CODE = 1
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -87,23 +95,29 @@ def main() -> int:
     CLI entry point.
     """
     args = parse_arguments()
-    runtime_options = build_runtime_options(args)
-    constraints = []
 
-    if runtime_options["constraints_path"] is not None:
-        constraints = load_constraints_from_file(runtime_options["constraints_path"])
+    try:
+        runtime_options = build_runtime_options(args)
+        constraints = []
 
-    result = run_json_pipeline(
-        input_path=runtime_options["input_path"],
-        output_path=runtime_options["output_path"],
-        report_path=runtime_options["report_path"],
-        html_report_path=runtime_options["html_report_path"],
-        quarantine_candidates_path=runtime_options["quarantine_candidates_path"],
-        quarantine_rows_path=runtime_options["quarantine_rows_path"],
-        accepted_rows_path=runtime_options["accepted_rows_path"],
-        constraints=constraints,
-        strict_mode=runtime_options["strict_mode"],
-    )
+        if runtime_options["constraints_path"] is not None:
+            constraints = load_constraints_from_file(runtime_options["constraints_path"])
+
+        result = run_json_pipeline(
+            input_path=runtime_options["input_path"],
+            output_path=runtime_options["output_path"],
+            report_path=runtime_options["report_path"],
+            html_report_path=runtime_options["html_report_path"],
+            quarantine_candidates_path=runtime_options["quarantine_candidates_path"],
+            quarantine_rows_path=runtime_options["quarantine_rows_path"],
+            accepted_rows_path=runtime_options["accepted_rows_path"],
+            constraints=constraints,
+            strict_mode=runtime_options["strict_mode"],
+        )
+    except Exception as error:
+        print("JSON pipeline failed.", file=sys.stderr)
+        print(str(error), file=sys.stderr)
+        return EXECUTION_ERROR_EXIT_CODE
 
     pipeline_status = result["pipeline_status"]
 
