@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`pipeline_config_resolver.py` converts a validated CSV pipeline config dictionary into runtime options.
+`pipeline_config_resolver.py` converts a validated pipeline config dictionary into runtime options.
 
 It belongs to the configuration layer.
 
@@ -32,6 +32,7 @@ The resolver:
 ```text
 resolves profile defaults
 applies config strict_mode override
+preserves input_format
 preserves configured paths
 converts path strings to Path objects
 ```
@@ -44,6 +45,7 @@ Returned fields include:
 
 ```text
 profile_options
+input_format
 input_path
 output_path
 constraints_path
@@ -53,6 +55,9 @@ quarantine_candidates_path
 quarantine_rows_path
 accepted_rows_path
 strict_mode
+encoding
+delimiter
+auto_detect_csv
 ```
 
 ---
