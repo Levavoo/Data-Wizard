@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from data_processor.core.json_pipeline import run_json_pipeline
-from data_processor.validators.constraints import RequiredConstraint
+from data_processor.validators.constraints import Constraint
 
 
 def test_json_pipeline_writes_clean_csv(tmp_path: Path) -> None:
@@ -27,7 +27,7 @@ def test_json_pipeline_applies_constraints_and_exports_report(tmp_path: Path) ->
         input_path="tests/fixtures/json/missing_keys_customers.json",
         output_path=output_path,
         report_path=report_path,
-        constraints=[RequiredConstraint(column="email")],
+        constraints=[Constraint(column_name="email", constraint_type="required")],
     )
 
     assert output_path.exists()
