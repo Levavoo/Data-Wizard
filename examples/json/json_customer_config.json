@@ -1,0 +1,7 @@
+{
+  "input_format": "json",
+  "input_path": "tests/fixtures/json/simple_customers.json",
+  "output_path": "data/processed/json_customers_clean.csv",
+  "report_path": "data/processed/json_customers_report.json",
+  "html_report_path": "data/processed/json_customers_report.html"
+}
