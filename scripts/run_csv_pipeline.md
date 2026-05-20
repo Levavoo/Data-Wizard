@@ -11,10 +11,12 @@ Architecture:
 ```text
 PowerShell Command
 → run_csv_pipeline.py
+→ optional cleaning profile resolution
 → data_processor.core.pipeline.run_csv_pipeline()
 → cleaned CSV output
 → optional diagnostic JSON report
 → optional diagnostic HTML report
+→ optional quarantine exports
 → process exit code
 ```
 
@@ -25,12 +27,14 @@ PowerShell Command
 This script handles:
 
 - reading command-line arguments
+- resolving optional built-in cleaning profiles
 - loading optional constraint JSON files
 - calling the CSV pipeline
 - printing the input path
 - printing the output path
-- printing the diagnostic JSON report path if provided
-- printing the diagnostic HTML report path if provided
+- printing selected profile information
+- printing diagnostic report paths if provided
+- printing quarantine export paths if provided
 - printing the pipeline status
 - printing the quality report summary
 - printing the validation report summary
@@ -44,6 +48,8 @@ It does not handle:
 - report construction directly
 - exporting directly
 - HTML rendering directly
+- quarantine row selection directly
+- external config files
 
 Those responsibilities belong to the core project modules.
 
@@ -65,10 +71,15 @@ output_path
 Optional arguments:
 
 ```text
+--profile
 --report-path
 --html-report-path
+--quarantine-candidates-path
+--quarantine-rows-path
+--accepted-rows-path
 --constraints-path
 --strict
+--no-strict
 ```
 
 ---
@@ -76,6 +87,18 @@ Optional arguments:
 ### `load_constraints_from_path(path)`
 
 Loads an optional JSON constraint file and converts it into `Constraint` objects.
+
+---
+
+### `resolve_cli_strict_override(args)`
+
+Converts explicit CLI strict flags into an override value:
+
+```text
+--strict → True
+--no-strict → False
+no strict flag → None
+```
 
 ---
 
@@ -87,6 +110,7 @@ Flow:
 
 ```text
 parse arguments
+→ resolve optional profile
 → load optional constraints
 → run pipeline
 → print summary
@@ -94,6 +118,58 @@ parse arguments
 → print quality report
 → print validation report
 → return exit code
+```
+
+---
+
+## Built-In Profiles
+
+Available profiles:
+
+```text
+default
+light_touch
+migration_audit
+strict_crm
+```
+
+Profiles currently define:
+
+```text
+strict mode default
+recommended output types
+profile description
+profile notes
+```
+
+Profiles do not generate output paths automatically in this stage.
+
+---
+
+## Profile Override Rules
+
+Explicit CLI options override profile defaults.
+
+Examples:
+
+```text
+--profile strict_crm --no-strict
+```
+
+means:
+
+```text
+use strict_crm profile metadata but disable strict mode
+```
+
+```text
+--profile default --strict
+```
+
+means:
+
+```text
+use default profile metadata but enable strict mode
 ```
 
 ---
@@ -115,7 +191,7 @@ Exit code 1 means the command itself failed to execute successfully.
 
 ---
 
-## Example Usage Without Report Export
+## Example Usage Without Profile
 
 ```powershell
 python scripts\run_csv_pipeline.py `
@@ -123,26 +199,17 @@ python scripts\run_csv_pipeline.py `
     data\processed\customers_clean.csv
 ```
 
+No profile is required. This keeps existing behavior.
+
 ---
 
-## Example Usage With JSON Report Export
+## Example Usage With Profile
 
 ```powershell
 python scripts\run_csv_pipeline.py `
     data\raw\customers.csv `
     data\processed\customers_clean.csv `
-    --report-path data\processed\customers_report.json
-```
-
----
-
-## Example Usage With HTML Report Export
-
-```powershell
-python scripts\run_csv_pipeline.py `
-    data\raw\customers.csv `
-    data\processed\customers_clean.csv `
-    --html-report-path data\processed\customers_report.html
+    --profile migration_audit
 ```
 
 ---
@@ -153,38 +220,68 @@ python scripts\run_csv_pipeline.py `
 python scripts\run_csv_pipeline.py `
     data\raw\customers.csv `
     data\processed\customers_clean.csv `
+    --profile migration_audit `
     --report-path data\processed\customers_report.json `
     --html-report-path data\processed\customers_report.html
 ```
 
 ---
 
-## Example Usage With Constraints
+## Example Usage With Quarantine Exports
 
 ```powershell
 python scripts\run_csv_pipeline.py `
     data\raw\customers.csv `
     data\processed\customers_clean.csv `
-    --constraints-path data\raw\customer_constraints.json `
-    --report-path data\processed\customers_report.json `
-    --html-report-path data\processed\customers_report.html
+    --profile migration_audit `
+    --quarantine-candidates-path data\processed\quarantine_candidates.json `
+    --quarantine-rows-path data\processed\quarantine_rows.csv `
+    --accepted-rows-path data\processed\accepted_rows.csv
 ```
 
 ---
 
-## Example Usage With Strict Mode
+## Example Usage With Constraints, Reports, and Quarantine Exports
 
 ```powershell
 python scripts\run_csv_pipeline.py `
     data\raw\customers.csv `
     data\processed\customers_clean.csv `
+    --profile migration_audit `
     --constraints-path data\raw\customer_constraints.json `
     --report-path data\processed\customers_report.json `
     --html-report-path data\processed\customers_report.html `
-    --strict
+    --quarantine-candidates-path data\processed\quarantine_candidates.json `
+    --quarantine-rows-path data\processed\quarantine_rows.csv `
+    --accepted-rows-path data\processed\accepted_rows.csv
 ```
 
-Strict mode exits with code `2` when serious policy failures are reported.
+---
+
+## Example Usage With Strict Profile
+
+```powershell
+python scripts\run_csv_pipeline.py `
+    data\raw\customers.csv `
+    data\processed\customers_clean.csv `
+    --profile strict_crm `
+    --constraints-path data\raw\customer_constraints.json
+```
+
+`strict_crm` enables strict mode by default.
+
+---
+
+## Disable Strict Mode From a Strict Profile
+
+```powershell
+python scripts\run_csv_pipeline.py `
+    data\raw\customers.csv `
+    data\processed\customers_clean.csv `
+    --profile strict_crm `
+    --constraints-path data\raw\customer_constraints.json `
+    --no-strict
+```
 
 ---
 
@@ -224,8 +321,13 @@ CSV pipeline completed.
 
 Input file: data\raw\customers.csv
 Output file: data\processed\customers_clean.csv
+Profile: strict_crm
+Profile description: Strict CRM migration workflow for constraint-sensitive imports.
 Diagnostic JSON report: data\processed\customers_report.json
 Diagnostic HTML report: data\processed\customers_report.html
+Quarantine candidates JSON: data\processed\quarantine_candidates.json
+Quarantine rows CSV: data\processed\quarantine_rows.csv
+Accepted rows CSV: data\processed\accepted_rows.csv
 Constraints file: data\raw\customer_constraints.json
 Strict mode: True
 
@@ -241,18 +343,13 @@ Validation report:
 
 ---
 
-## Import Path Handling
-
-This script adds the project root to `sys.path`.
-
-Reason:
-
-When Python runs a script from the `scripts/` folder, Python may treat `scripts/` as the import root.
-
-The project package lives here:
+## Quarantine Export Safety
 
 ```text
-data_processor/
+normal cleaned CSV still includes all rows
+quarantine rows CSV is an additional explicit review file
+accepted rows CSV is an additional explicit split file
+rows are not deleted automatically
 ```
 
 ---
@@ -265,6 +362,7 @@ They should only:
 
 ```text
 receive input
+resolve simple built-in profile defaults
 load simple config files
 call project modules
 show output
@@ -280,12 +378,16 @@ They should not contain business logic.
 ```text
 CSV File
 → CLI Runner
+→ Optional Built-In Profile Resolver
 → Optional Constraint Config Loader
 → Pipeline
 → Pipeline Status
 → Cleaned CSV
 → Optional Diagnostic JSON Report
 → Optional Diagnostic HTML Report
+→ Optional Quarantine Candidate JSON
+→ Optional Quarantine Rows CSV
+→ Optional Accepted Rows CSV
 → Exit Code
 ```
 
@@ -306,25 +408,14 @@ black scripts\run_csv_pipeline.py
 python scripts\run_csv_pipeline.py `
     data\raw\customers.csv `
     data\processed\customers_clean.csv `
+    --profile strict_crm `
     --constraints-path data\raw\customer_constraints.json `
     --report-path data\processed\customers_report.json `
     --html-report-path data\processed\customers_report.html `
-    --strict
+    --quarantine-candidates-path data\processed\quarantine_candidates.json `
+    --quarantine-rows-path data\processed\quarantine_rows.csv `
+    --accepted-rows-path data\processed\accepted_rows.csv
 ```
-
----
-
-## Developer Notes
-
-This script intentionally uses:
-
-```python
-argparse
-```
-
-because it is part of the Python standard library.
-
-No external CLI framework is needed yet.
 
 ---
 
@@ -335,8 +426,11 @@ Possible future additions:
 - verbose mode
 - dry-run mode
 - selectable strict policy modes
-- selectable cleaning profile
+- external profile config files
+- config-file pipeline execution
+- automatic output path generation
 - batch folder processing
 - logging
 - more granular exit codes
 - richer HTML report rendering
+- quarantine export summaries in CLI output

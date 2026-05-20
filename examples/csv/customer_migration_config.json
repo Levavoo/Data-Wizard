@@ -1,0 +1,12 @@
+{
+  "input_path": "examples/csv/customer_migration_sample.csv",
+  "output_path": "data/processed/customer_migration_clean.csv",
+  "profile": "migration_audit",
+  "constraints_path": "examples/csv/customer_constraints.json",
+  "report_path": "data/processed/customer_migration_report.json",
+  "html_report_path": "data/processed/customer_migration_report.html",
+  "quarantine_candidates_path": "data/processed/quarantine_candidates.json",
+  "quarantine_rows_path": "data/processed/quarantine_rows.csv",
+  "accepted_rows_path": "data/processed/accepted_rows.csv",
+  "strict_mode": false
+}

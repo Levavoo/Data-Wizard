@@ -25,14 +25,15 @@ Input CSV
 → CSV Exporter
 → Optional JSON Report Exporter
 → Optional HTML Report Exporter
-→ Cleaned CSV + Diagnostic Reports + Status
+→ Optional Quarantine Exporters
+→ Cleaned CSV + Diagnostic Reports + Review Outputs + Status
 ```
 
 ---
 
 ## Main Function
 
-### `run_csv_pipeline(input_path, output_path, report_path=None, html_report_path=None, constraints=None, strict_mode=False)`
+### `run_csv_pipeline(input_path, output_path, report_path=None, html_report_path=None, quarantine_candidates_path=None, quarantine_rows_path=None, accepted_rows_path=None, constraints=None, strict_mode=False)`
 
 Runs the complete CSV workflow.
 
@@ -46,6 +47,9 @@ Runs the complete CSV workflow.
 | `output_path` | `str | Path` | Target cleaned CSV output path |
 | `report_path` | `str | Path | None` | Optional diagnostic JSON report output path |
 | `html_report_path` | `str | Path | None` | Optional diagnostic HTML report output path |
+| `quarantine_candidates_path` | `str | Path | None` | Optional quarantine candidates JSON output path |
+| `quarantine_rows_path` | `str | Path | None` | Optional quarantine candidate rows CSV output path |
+| `accepted_rows_path` | `str | Path | None` | Optional accepted rows CSV output path |
 | `constraints` | `list[Constraint] | None` | Optional validation constraints |
 | `strict_mode` | `bool` | Optional strict policy status mode |
 
@@ -216,6 +220,8 @@ Writes cleaned data to disk.
 
 Strict policy failure does not block CSV export.
 
+The normal cleaned CSV still includes all rows.
+
 ---
 
 ### 13. Optionally Export Diagnostic JSON Report
@@ -250,6 +256,44 @@ Writes a static, self-contained HTML report if an HTML report path is provided.
 
 ---
 
+### 15. Optionally Export Quarantine Candidate JSON
+
+```python
+if quarantine_candidates_path is not None:
+    export_quarantine_candidates_to_json(
+        quarantine_candidates=quarantine_candidates,
+        output_path=quarantine_candidates_path,
+    )
+```
+
+Writes only the `quarantine_candidates` report section as JSON.
+
+---
+
+### 16. Optionally Export Quarantine Rows CSV
+
+```python
+if quarantine_rows_path is not None:
+    quarantine_rows = select_quarantine_rows(table, quarantine_candidates)
+    export_table_to_csv(quarantine_rows, quarantine_rows_path)
+```
+
+Writes only rows listed as quarantine candidates.
+
+---
+
+### 17. Optionally Export Accepted Rows CSV
+
+```python
+if accepted_rows_path is not None:
+    accepted_rows = select_accepted_rows(table, quarantine_candidates)
+    export_table_to_csv(accepted_rows, accepted_rows_path)
+```
+
+Writes rows not listed as quarantine candidates.
+
+---
+
 ## Return Value
 
 The pipeline returns:
@@ -266,7 +310,7 @@ The pipeline returns:
 
 ---
 
-## Example With Constraints, Strict Mode, and Reports
+## Example With Constraints, Strict Mode, Reports, and Quarantine Exports
 
 ```python
 from data_processor.core.pipeline import run_csv_pipeline
@@ -282,6 +326,9 @@ result = run_csv_pipeline(
     output_path="data/processed/customers_clean.csv",
     report_path="data/processed/customers_report.json",
     html_report_path="data/processed/customers_report.html",
+    quarantine_candidates_path="data/processed/quarantine_candidates.json",
+    quarantine_rows_path="data/processed/quarantine_rows.csv",
+    accepted_rows_path="data/processed/accepted_rows.csv",
     constraints=constraints,
     strict_mode=True,
 )
@@ -303,6 +350,7 @@ It should not:
 - build report internals manually
 - decide CLI exit codes directly
 - render HTML manually
+- build quarantine row-selection logic directly
 
 Those responsibilities belong to dedicated modules.
 
@@ -338,6 +386,12 @@ Cleaned CSV
 Optional JSON Diagnostic Report
 ↓
 Optional HTML Diagnostic Report
+↓
+Optional Quarantine Candidate JSON
+↓
+Optional Quarantine Rows CSV
+↓
+Optional Accepted Rows CSV
 ```
 
 ---
@@ -351,6 +405,9 @@ CSV input
 CSV output
 optional JSON diagnostic report
 optional HTML diagnostic report
+optional quarantine candidate JSON export
+optional quarantine rows CSV export
+optional accepted rows CSV export
 optional constraint validation
 optional strict status mode
 basic cleaning
@@ -369,6 +426,17 @@ pipeline status reporting
 
 ---
 
+## Safety Policy
+
+```text
+normal cleaned CSV includes all rows
+quarantine exports are optional and explicit
+quarantine export does not mutate the original table
+strict mode behavior is unchanged
+```
+
+---
+
 ## Future Improvements
 
 Possible future additions:
@@ -381,5 +449,5 @@ Possible future additions:
 - pipeline version
 - cleaning profile support
 - batch CSV processing
-- quarantine export support
+- richer quarantine export metadata
 - richer HTML report sections

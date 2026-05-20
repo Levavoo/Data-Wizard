@@ -8,8 +8,11 @@ It does not clean values, infer types, validate constraints, or export data.
 """
 
 import csv
+from typing import Any
 
 from data_processor.adapters.base_adapter import BaseAdapter
+from data_processor.adapters.delimiter_detection import detect_delimiter
+from data_processor.adapters.encoding_detection import detect_text_encoding
 from data_processor.adapters.parse_diagnostics import ParseDiagnostics
 from data_processor.core.column import Column
 from data_processor.core.schema import Schema
@@ -22,8 +25,8 @@ class CsvAdapter(BaseAdapter):
 
     Responsibilities:
     - validate source file
-    - detect encoding fallback
-    - detect delimiter
+    - detect or use configured encoding
+    - detect or use configured delimiter
     - detect likely header row
     - preserve pre-header metadata rows
     - parse CSV rows
@@ -41,19 +44,36 @@ class CsvAdapter(BaseAdapter):
     """
 
     supported_extensions = (".csv",)
+    minimum_header_non_empty_ratio = 0.5
 
-    ENCODINGS = (
-        "utf-8",
-        "utf-8-sig",
-        "cp1252",
-    )
+    def __init__(
+        self,
+        file_path,
+        encoding: str | None = None,
+        delimiter: str | None = None,
+        auto_detect: bool = True,
+    ) -> None:
+        """
+        Initialize the CSV adapter.
 
-    DELIMITER_CANDIDATES = (
-        ",",
-        ";",
-        "\t",
-        "|",
-    )
+        Args:
+            file_path:
+                Source CSV path.
+
+            encoding:
+                Optional explicit text encoding.
+
+            delimiter:
+                Optional explicit CSV delimiter.
+
+            auto_detect:
+                Whether missing encoding/delimiter values should be detected.
+        """
+        super().__init__(file_path)
+        self.encoding_override = encoding
+        self.delimiter_override = delimiter
+        self.auto_detect = auto_detect
+        self.detection_diagnostics: dict[str, Any] = {}
 
     def read(self) -> Table:
         """
@@ -68,8 +88,8 @@ class CsvAdapter(BaseAdapter):
         """
         self.validate_file()
 
-        encoding = self._detect_encoding()
-        delimiter = self._detect_delimiter(encoding)
+        encoding = self._resolve_encoding()
+        delimiter = self._resolve_delimiter(encoding)
 
         rows = self._read_rows(
             encoding=encoding,
@@ -126,59 +146,78 @@ class CsvAdapter(BaseAdapter):
 
         return table
 
-    def _detect_encoding(self) -> str:
+    def _resolve_encoding(self) -> str:
         """
-        Detect a working text encoding.
-
-        Returns:
-            Valid encoding string.
-
-        Raises:
-            ValueError:
-                If no encoding works.
+        Resolve explicit or detected encoding.
         """
-        for encoding in self.ENCODINGS:
-            try:
-                with self.file_path.open(
-                    mode="r",
-                    encoding=encoding,
-                ) as test_file:
-                    test_file.read(2048)
+        if self.encoding_override is not None:
+            diagnostics = {
+                "selected_encoding": self.encoding_override,
+                "candidate_results": [],
+                "confidence": "override",
+                "reason": "Explicit encoding override was provided.",
+            }
+            self.detection_diagnostics["encoding"] = diagnostics
+            self._validate_encoding(self.encoding_override)
+            return self.encoding_override
 
-                return encoding
+        if not self.auto_detect:
+            diagnostics = {
+                "selected_encoding": "utf-8",
+                "candidate_results": [],
+                "confidence": "default",
+                "reason": "Auto-detection disabled; using UTF-8 default.",
+            }
+            self.detection_diagnostics["encoding"] = diagnostics
+            self._validate_encoding("utf-8")
+            return "utf-8"
 
-            except UnicodeDecodeError:
-                continue
+        diagnostics = detect_text_encoding(self.file_path)
+        self.detection_diagnostics["encoding"] = diagnostics
+        return diagnostics["selected_encoding"]
 
-        raise ValueError(f"Unable to decode CSV file: {self.file_path}")
-
-    def _detect_delimiter(self, encoding: str) -> str:
+    def _resolve_delimiter(self, encoding: str) -> str:
         """
-        Detect the CSV delimiter.
-
-        Args:
-            encoding:
-                Working file encoding.
-
-        Returns:
-            Detected delimiter.
+        Resolve explicit or detected delimiter.
         """
-        with self.file_path.open(
-            mode="r",
-            encoding=encoding,
-        ) as csv_file:
-            sample = csv_file.read(4096)
+        if self.delimiter_override is not None:
+            diagnostics = {
+                "selected_delimiter": self.delimiter_override,
+                "candidate_scores": [],
+                "confidence": "override",
+                "reason": "Explicit delimiter override was provided.",
+            }
+            self.detection_diagnostics["delimiter"] = diagnostics
+            return self.delimiter_override
 
-        try:
-            dialect = csv.Sniffer().sniff(
-                sample,
-                delimiters=self.DELIMITER_CANDIDATES,
-            )
-
-            return dialect.delimiter
-
-        except csv.Error:
+        if not self.auto_detect:
+            diagnostics = {
+                "selected_delimiter": ",",
+                "candidate_scores": [],
+                "confidence": "default",
+                "reason": "Auto-detection disabled; using comma default.",
+            }
+            self.detection_diagnostics["delimiter"] = diagnostics
             return ","
+
+        sample = self._read_text_sample(encoding)
+        diagnostics = detect_delimiter(sample)
+        self.detection_diagnostics["delimiter"] = diagnostics
+        return diagnostics["selected_delimiter"]
+
+    def _validate_encoding(self, encoding: str) -> None:
+        """
+        Validate that the selected encoding can read the file sample.
+        """
+        with self.file_path.open(mode="r", encoding=encoding) as test_file:
+            test_file.read(2048)
+
+    def _read_text_sample(self, encoding: str) -> str:
+        """
+        Read a text sample for delimiter detection.
+        """
+        with self.file_path.open(mode="r", encoding=encoding) as csv_file:
+            return csv_file.read(4096)
 
     def _read_rows(
         self,
@@ -220,16 +259,21 @@ class CsvAdapter(BaseAdapter):
 
         Heuristic:
         - prefer the first row with more than one field
+        - ignore sparse rows that mostly contain empty delimiter padding
         - require at least one following row with the same field count
         - fall back to the first row if no stronger candidate exists
 
         This supports files with metadata/preamble lines before the header
-        while avoiding accidental selection of a single malformed data row.
+        while avoiding accidental selection of sparse metadata rows like:
+        `Generated by: crm;;;;;;;`.
         """
         for index, row in enumerate(rows):
             field_count = len(row)
 
             if field_count <= 1:
+                continue
+
+            if not self._looks_like_header_row(row):
                 continue
 
             following_rows = rows[index + 1 :]
@@ -242,6 +286,19 @@ class CsvAdapter(BaseAdapter):
                 return index
 
         return 0
+
+    def _looks_like_header_row(self, row: list[str]) -> bool:
+        """
+        Return whether a row is dense enough to be a header candidate.
+
+        Metadata rows in real-world exports often contain one label followed by
+        many delimiter-padding empty fields. Those rows should not be selected as
+        headers even if their field count matches other metadata rows.
+        """
+        non_empty_count = sum(1 for value in row if value.strip())
+        non_empty_ratio = non_empty_count / len(row)
+
+        return non_empty_ratio >= self.minimum_header_non_empty_ratio
 
     def _normalize_header(self, header: str) -> str:
         """
@@ -309,37 +366,13 @@ class CsvAdapter(BaseAdapter):
     ) -> ParseDiagnostics:
         """
         Build parser diagnostics from raw CSV structure.
-
-        Args:
-            rows:
-                Raw CSV rows.
-
-            original_headers:
-                Header row before normalization.
-
-            normalized_headers:
-                Unique normalized headers.
-
-            header_row_index:
-                Zero-based source row index used as the header.
-
-            preamble_rows:
-                Rows before the detected header.
-
-            delimiter:
-                Detected delimiter.
-
-            encoding:
-                Detected encoding.
-
-        Returns:
-            ParseDiagnostics object.
         """
         diagnostics = ParseDiagnostics(
             header_row_index=header_row_index,
             preamble_row_count=len(preamble_rows),
             delimiter=delimiter,
             encoding=encoding,
+            detection=self.detection_diagnostics,
         )
 
         header_count = len(normalized_headers)
@@ -357,7 +390,10 @@ class CsvAdapter(BaseAdapter):
         if diagnostics.duplicate_headers:
             diagnostics.add_warning("One or more headers were duplicated.")
 
-        for source_row_index, raw_row in enumerate(rows[header_row_index + 1 :], start=header_row_index + 1):
+        for source_row_index, raw_row in enumerate(
+            rows[header_row_index + 1 :],
+            start=header_row_index + 1,
+        ):
             row_field_count = len(raw_row)
 
             if row_field_count > header_count:
@@ -386,13 +422,6 @@ class CsvAdapter(BaseAdapter):
     ) -> list[str]:
         """
         Find duplicated headers after standard header normalization.
-
-        Args:
-            headers:
-                Raw CSV headers.
-
-        Returns:
-            List of duplicate normalized header base names.
         """
         seen: set[str] = set()
         duplicates: list[str] = []
@@ -414,16 +443,6 @@ class CsvAdapter(BaseAdapter):
     ) -> Schema:
         """
         Build a schema from CSV headers.
-
-        Args:
-            original_headers:
-                Raw CSV headers.
-
-            normalized_headers:
-                Normalized internal headers.
-
-        Returns:
-            Schema object.
         """
         schema = Schema()
 
@@ -448,16 +467,6 @@ class CsvAdapter(BaseAdapter):
     ) -> dict[str, str | None]:
         """
         Normalize one CSV row.
-
-        Args:
-            raw_row:
-                Raw CSV row as a list of values.
-
-            normalized_headers:
-                Internal unique header names.
-
-        Returns:
-            Normalized row dictionary.
         """
         normalized_row: dict[str, str | None] = {}
 

@@ -284,6 +284,69 @@ def test_run_csv_pipeline_reports_quarantine_candidates(tmp_path: Path) -> None:
     assert output_path.exists()
 
 
+def test_run_csv_pipeline_exports_quarantine_files(tmp_path: Path) -> None:
+    """
+    Verify explicit quarantine exports do not change the normal cleaned CSV.
+    """
+    input_path = tmp_path / "customers.csv"
+    output_path = tmp_path / "output.csv"
+    quarantine_candidates_path = tmp_path / "reports" / "quarantine_candidates.json"
+    quarantine_rows_path = tmp_path / "reports" / "quarantine_rows.csv"
+    accepted_rows_path = tmp_path / "reports" / "accepted_rows.csv"
+
+    input_path.write_text(
+        "Customer ID,Country,Email,Amount\n"
+        "1,Germany,alice@example.com,100\n"
+        "2,Mars,invalid-email,-5\n"
+        "TOTAL,,,\n",
+        encoding="utf-8",
+    )
+
+    constraints = [
+        Constraint(
+            column_name="country",
+            constraint_type="allowed_values",
+            value=["Germany"],
+        ),
+        Constraint(
+            column_name="email",
+            constraint_type="regex_pattern",
+            value=r"^[^@]+@[^@]+\.[^@]+$",
+        ),
+        Constraint(column_name="amount", constraint_type="min_value", value=0),
+    ]
+
+    run_csv_pipeline(
+        input_path=input_path,
+        output_path=output_path,
+        quarantine_candidates_path=quarantine_candidates_path,
+        quarantine_rows_path=quarantine_rows_path,
+        accepted_rows_path=accepted_rows_path,
+        constraints=constraints,
+    )
+
+    assert output_path.exists()
+    assert quarantine_candidates_path.exists()
+    assert quarantine_rows_path.exists()
+    assert accepted_rows_path.exists()
+
+    normal_output = output_path.read_text(encoding="utf-8")
+    quarantine_output = quarantine_rows_path.read_text(encoding="utf-8")
+    accepted_output = accepted_rows_path.read_text(encoding="utf-8")
+    quarantine_candidates = json.loads(
+        quarantine_candidates_path.read_text(encoding="utf-8")
+    )
+
+    assert "alice@example.com" in normal_output
+    assert "invalid-email" in normal_output
+    assert "TOTAL" in normal_output
+    assert "invalid-email" in quarantine_output
+    assert "TOTAL" in quarantine_output
+    assert "alice@example.com" in accepted_output
+    assert "invalid-email" not in accepted_output
+    assert quarantine_candidates["candidate_count"] >= 2
+
+
 def test_run_csv_pipeline_returns_non_strict_status_by_default(
     tmp_path: Path,
 ) -> None:
