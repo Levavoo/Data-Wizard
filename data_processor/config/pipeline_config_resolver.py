@@ -1,5 +1,5 @@
 """
-CSV pipeline config resolver.
+Pipeline config resolver.
 
 This module converts a validated pipeline config dictionary into runtime options.
 It does not run the pipeline or load constraints.
@@ -40,6 +40,7 @@ def resolve_pipeline_config_options(config: dict[str, Any]) -> dict[str, Any]:
 
     resolved: dict[str, Any] = {
         "profile_options": profile_options,
+        "input_format": config.get("input_format", "csv"),
         "input_path": config["input_path"],
         "output_path": config["output_path"],
         "constraints_path": config.get("constraints_path"),
